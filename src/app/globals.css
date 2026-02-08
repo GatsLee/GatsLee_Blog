@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #1a1a2e;
+  --color-foreground: #d4d4dc;
+  --color-terminal-bg: #1a1a2e;
+  --color-terminal-surface: #22223a;
+  --color-terminal-border: #2e2e4a;
+  --color-terminal-green: #d4a054;
+  --color-terminal-green-dim: #b8893e;
+  --color-terminal-green-muted: #2a2418;
+  --color-terminal-amber: #d4a054;
+  --color-terminal-red: #e05555;
+  --color-terminal-text: #8888a0;
+  --color-terminal-text-bright: #d4d4dc;
+  --font-mono: 'JetBrains Mono', 'Noto Sans KR', monospace;
+  --font-sans: 'Inter', 'Noto Sans KR', sans-serif;
+
+  --animate-blink: blink 1s step-end infinite;
+  --animate-pulse-slow: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* Base styles */
+body {
+  background: #1a1a2e;
+  color: #d4d4dc;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+}
+
+/* Selection */
+::selection {
+  background: #d4a054;
+  color: #1a1a2e;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #1a1a2e; }
+::-webkit-scrollbar-thumb { background: #3a3a52; }
+::-webkit-scrollbar-thumb:hover { background: #5a5a72; }
+
+/* Fade-in animation utility */
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Mermaid diagram overrides */
+.mermaid-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-container .edgeLabel {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+}
+
+.mermaid-container .cluster rect {
+  rx: 8;
+  ry: 8;
+}
+
+/* Streaming edge animation */
+@keyframes dash-stream {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.mermaid-container .streaming-edge {
+  stroke-dasharray: 8 4;
+  stroke-dashoffset: 0;
+  animation: dash-stream 1.2s linear infinite;
+}
+
+/* Line clamp */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

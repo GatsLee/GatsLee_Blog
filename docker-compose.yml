@@ -1,0 +1,18 @@
+services:
+  blog:
+    build: .
+    ports:
+      - "3001:3001"
+    volumes:
+      - blog-data:/app/prisma      # Persist SQLite database
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # For container metrics
+      - /sys/class/thermal:/sys/class/thermal:ro       # For CPU temperature
+    environment:
+      - DATABASE_URL=file:/app/prisma/blog.db
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+    restart: unless-stopped
+
+volumes:
+  blog-data:
