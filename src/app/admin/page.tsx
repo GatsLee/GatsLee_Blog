@@ -39,6 +39,7 @@ export default function AdminPage() {
   const [guestEntries, setGuestEntries] = useState<GuestEntry[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [postCategoryFilter, setPostCategoryFilter] = useState<string>("all");
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -148,7 +149,52 @@ export default function AdminPage() {
 
       {/* Posts Tab */}
       {activeTab === "posts" && (
-        <div className="bg-[#22223a] border border-[#2e2e4a] rounded-lg overflow-hidden">
+        <>
+          {/* Category Filter Buttons */}
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setPostCategoryFilter("all")}
+              className={`px-4 py-2 text-xs font-mono uppercase tracking-wider transition-colors rounded ${
+                postCategoryFilter === "all"
+                  ? "bg-[#d4a054] text-[#1a1a2e] font-bold"
+                  : "bg-[#22223a] text-[#8888a0] border border-[#2e2e4a] hover:border-[#d4a054] hover:text-[#d4a054]"
+              }`}
+            >
+              All Posts
+            </button>
+            <button
+              onClick={() => setPostCategoryFilter("devlog")}
+              className={`px-4 py-2 text-xs font-mono uppercase tracking-wider transition-colors rounded ${
+                postCategoryFilter === "devlog"
+                  ? "bg-[#d4a054] text-[#1a1a2e] font-bold"
+                  : "bg-[#22223a] text-[#8888a0] border border-[#2e2e4a] hover:border-[#d4a054] hover:text-[#d4a054]"
+              }`}
+            >
+              Development Logs
+            </button>
+            <button
+              onClick={() => setPostCategoryFilter("troubleshooting")}
+              className={`px-4 py-2 text-xs font-mono uppercase tracking-wider transition-colors rounded ${
+                postCategoryFilter === "troubleshooting"
+                  ? "bg-[#d4a054] text-[#1a1a2e] font-bold"
+                  : "bg-[#22223a] text-[#8888a0] border border-[#2e2e4a] hover:border-[#d4a054] hover:text-[#d4a054]"
+              }`}
+            >
+              Troubleshooting
+            </button>
+            <button
+              onClick={() => setPostCategoryFilter("progress")}
+              className={`px-4 py-2 text-xs font-mono uppercase tracking-wider transition-colors rounded ${
+                postCategoryFilter === "progress"
+                  ? "bg-[#d4a054] text-[#1a1a2e] font-bold"
+                  : "bg-[#22223a] text-[#8888a0] border border-[#2e2e4a] hover:border-[#d4a054] hover:text-[#d4a054]"
+              }`}
+            >
+              Build Progress
+            </button>
+          </div>
+
+          <div className="bg-[#22223a] border border-[#2e2e4a] rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#2e2e4a] text-[#8888a0] text-xs font-mono uppercase">
@@ -160,7 +206,9 @@ export default function AdminPage() {
               </tr>
             </thead>
             <tbody>
-              {posts.map((post) => (
+              {posts
+                .filter((post) => postCategoryFilter === "all" || post.category === postCategoryFilter)
+                .map((post) => (
                 <tr key={post.id} className="border-b border-[#2e2e4a]/50 hover:bg-[#1a1a2e] transition-colors">
                   <td className="p-4">
                     <span className="text-[#d4d4dc] font-medium">{post.title}</span>
@@ -204,16 +252,19 @@ export default function AdminPage() {
                   </td>
                 </tr>
               ))}
-              {posts.length === 0 && (
+              {posts
+                .filter((post) => postCategoryFilter === "all" || post.category === postCategoryFilter)
+                .length === 0 && (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-[#5a5a72] font-mono text-sm">
-                    {t("admin.empty")}
+                    {postCategoryFilter === "all" ? t("admin.empty") : `No ${postCategoryFilter} posts found.`}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {/* Comments Tab */}

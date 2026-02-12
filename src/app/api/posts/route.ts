@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
       category: true,
       content: true,
       createdAt: true,
+      published: true,
       tags: true,
     },
   });

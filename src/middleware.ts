@@ -9,12 +9,13 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const method = request.method;
 
-  // Allow public comment, guestbook, and webhook POST
+  // Allow public endpoints without auth
   if (
     method === "POST" &&
     (pathname === "/api/comments" ||
       pathname === "/api/guestbook" ||
-      pathname === "/api/posts/webhook")
+      pathname === "/api/posts/webhook" ||
+      pathname === "/api/auth/login")
   ) {
     return NextResponse.next();
   }

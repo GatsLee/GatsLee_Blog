@@ -24,10 +24,10 @@ import {
 
 const navItems: { href: string; icon: typeof HardDrive; labelKey: TranslationKey }[] = [
   { href: "/", icon: HardDrive, labelKey: "nav.home" },
+  { href: "/progress", icon: TrendingUp, labelKey: "nav.progress" },
   { href: "/devlogs", icon: FileText, labelKey: "nav.devlogs" },
   { href: "/troubleshooting", icon: AlertCircle, labelKey: "nav.troubleshooting" },
   { href: "/guestlogs", icon: Terminal, labelKey: "nav.guestlogs" },
-  { href: "/progress", icon: TrendingUp, labelKey: "nav.progress" },
 ];
 
 export default function Sidebar({ isAdmin }: { isAdmin: boolean }) {

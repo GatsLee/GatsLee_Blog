@@ -9,7 +9,7 @@ services:
       - /sys/class/thermal:/sys/class/thermal:ro       # For CPU temperature
     environment:
       - DATABASE_URL=file:/app/prisma/blog.db
-      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SECRET=${JWT_SECRET:-development}
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
     restart: unless-stopped

@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Save } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Save, Calendar, Image as ImageIcon } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
+
+// Import markdown editor dynamically to avoid SSR issues
+const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
 export default function WritePage() {
   const [title, setTitle] = useState("");
@@ -11,8 +15,35 @@ export default function WritePage() {
   const [content, setContent] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [currentDate, setCurrentDate] = useState("");
+  const [images, setImages] = useState<string[]>([]);
   const router = useRouter();
   const { t } = useLanguage();
+
+  // Set current date on mount
+  useEffect(() => {
+    const now = new Date();
+    const formatted = now.toISOString().split('T')[0] + ' ' +
+                      now.toTimeString().split(' ')[0];
+    setCurrentDate(formatted);
+  }, []);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        setImages((prev) => [...prev, base64]);
+        // Insert markdown image syntax at cursor
+        const imageMarkdown = `\n![${file.name}](${base64})\n`;
+        setContent((prev) => prev + imageMarkdown);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,9 +75,15 @@ export default function WritePage() {
 
   return (
     <div className="max-w-3xl mx-auto animate-fadeIn w-full">
-      <h2 className="text-xl text-[#d4d4dc] mb-8 font-bold flex items-center tracking-tight">
-        <Save className="mr-2" size={20} /> {t("write.title")}
-      </h2>
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-xl text-[#d4d4dc] font-bold flex items-center tracking-tight">
+          <Save className="mr-2" size={20} /> {t("write.title")}
+        </h2>
+        <div className="flex items-center gap-2 text-[#8888a0] text-xs font-mono">
+          <Calendar size={14} />
+          <span>{currentDate}</span>
+        </div>
+      </div>
 
       <form
         onSubmit={handleSubmit}
@@ -76,19 +113,48 @@ export default function WritePage() {
             >
               <option value="devlog">{t("write.devlog")}</option>
               <option value="troubleshooting">{t("write.troubleshooting")}</option>
+              <option value="progress">Progress</option>
             </select>
           </div>
         </div>
         <div>
-          <label className="block text-xs text-[#8888a0] mb-2 font-mono uppercase">
-            {t("write.content")}
-          </label>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full h-80 bg-[#1a1a2e] border border-[#2e2e4a] rounded p-4 text-[#b0b0bc] focus:border-[#d4a054] focus:outline-none transition-colors font-mono leading-relaxed placeholder-[#3a3a52]"
-            placeholder="Begin writing protocol..."
-          />
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-xs text-[#8888a0] font-mono uppercase">
+              {t("write.content")} - Markdown Editor
+            </label>
+            {/* Image Upload - Show for devlog and progress categories */}
+            {(category === "devlog" || category === "progress") && (
+              <label className="flex items-center gap-1 text-xs text-[#8888a0] hover:text-[#d4a054] cursor-pointer transition-colors">
+                <ImageIcon size={14} />
+                <span>Add Image</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
+
+          {/* WYSIWYG Markdown Editor */}
+          <div data-color-mode="dark">
+            <MDEditor
+              value={content}
+              onChange={(val) => setContent(val || "")}
+              height={400}
+              preview="live"
+              hideToolbar={false}
+              enableScroll={true}
+              visibleDragbar={false}
+              style={{
+                backgroundColor: "#1a1a2e",
+                border: "1px solid #2e2e4a",
+                borderRadius: "0.5rem",
+              }}
+            />
+          </div>
         </div>
 
         {error && (

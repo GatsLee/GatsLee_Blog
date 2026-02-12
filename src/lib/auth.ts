@@ -38,7 +38,7 @@ export function getTokenCookieOptions(token: string) {
     value: token,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict" as const,
+    sameSite: "lax" as const, // 'lax' for temporary cross-site usage
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 days
   };

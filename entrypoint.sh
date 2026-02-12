@@ -36,8 +36,18 @@ SQL
   done
 
   echo "[entrypoint] Schema applied."
+
+  # Initialize admin user using Node.js script
+  DB_PATH="$DB_PATH" node /app/init-admin.js
 else
   echo "[entrypoint] Database exists. Skipping migrations."
+
+  # Check if admin user exists, if not create it
+  ADMIN_EXISTS=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM AdminUser WHERE username='${ADMIN_USERNAME:-admin}';")
+  if [ "$ADMIN_EXISTS" = "0" ]; then
+    echo "[entrypoint] Admin user not found. Creating..."
+    DB_PATH="$DB_PATH" node /app/init-admin.js
+  fi
 fi
 
 echo "[entrypoint] Starting server..."

@@ -44,3 +44,8 @@ API_DOCUMENTATION.md
 
 # db
 dev.db
+*.db
+
+# docker volumes & traefik
+traefik/
+acme.json

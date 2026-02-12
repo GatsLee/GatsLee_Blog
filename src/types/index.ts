@@ -24,3 +24,10 @@ export interface GuestbookEntry {
   message: string;
   createdAt: string;
 }
+
+export interface ProgressEntry {
+  id: number;
+  category: string;
+  description: string;
+  date: string;
+}

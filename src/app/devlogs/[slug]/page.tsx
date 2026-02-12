@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import CommentSection from "@/components/posts/CommentSection";
 import { PostBackLink, PostMetaInfo } from "@/components/posts/PostMeta";
+import { renderMarkdown } from "@/lib/markdown";
 
 export default async function PostPage({
   params,
@@ -31,9 +32,10 @@ export default async function PostPage({
           />
         </div>
 
-        <div className="prose prose-invert prose-p:text-[#b0b0bc] prose-headings:text-[#d4d4dc] max-w-none font-light text-sm leading-8 whitespace-pre-line">
-          {post.content}
-        </div>
+        <div
+          className="prose prose-invert max-w-none text-sm leading-7"
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
+        />
 
         <CommentSection postId={post.id} />
       </div>
