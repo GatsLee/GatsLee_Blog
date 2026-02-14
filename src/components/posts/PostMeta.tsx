@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Calendar, Tag } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 interface PostMetaProps {
@@ -14,9 +14,9 @@ export function PostBackLink() {
   return (
     <Link
       href="/devlogs"
-      className="mb-8 text-[#8888a0] hover:text-[#d4a054] text-xs font-mono flex items-center transition-colors hover:-translate-x-1 duration-200 inline-flex"
+      className="mb-8 text-muted hover:text-accent text-sm flex items-center transition-all hover:-translate-x-1 duration-200 inline-flex cursor-pointer"
     >
-      <ChevronLeft size={14} className="mr-1" /> {t("post.back")}
+      <ChevronLeft size={16} strokeWidth={1.5} className="mr-1" /> {t("post.back")}
     </Link>
   );
 }
@@ -24,11 +24,16 @@ export function PostBackLink() {
 export function PostMetaInfo({ date, category }: PostMetaProps) {
   const { t } = useLanguage();
   return (
-    <div className="flex items-center text-xs text-[#8888a0] space-x-6 font-mono uppercase tracking-wider">
-      <span>{t("post.date")}{date}</span>
-      <span>{t("post.category")}{category}</span>
-      <span>Auth: root</span>
-      <span>Perm: r--r--r--</span>
+    <div className="flex items-center text-xs text-muted space-x-4 tracking-wide">
+      <span className="flex items-center gap-1.5">
+        <Calendar size={12} strokeWidth={1.5} />
+        {date}
+      </span>
+      <span className="text-border-strong">•</span>
+      <span className="flex items-center gap-1.5">
+        <Tag size={12} strokeWidth={1.5} />
+        {category}
+      </span>
     </div>
   );
 }

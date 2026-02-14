@@ -5,6 +5,15 @@ export default async function TroubleshootingPage() {
   const posts = await prisma.post.findMany({
     where: { category: "troubleshooting", published: true },
     orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      category: true,
+      content: true,
+      createdAt: true,
+      tags: true,
+    },
   });
 
   const serialized = posts.map((p) => ({

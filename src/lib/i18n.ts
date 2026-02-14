@@ -125,6 +125,12 @@ export const translations = {
 
   // Common
   "error.connection": { en: "CONNECTION ERROR", ko: "연결 오류" },
+
+  // Tags & Filters
+  "filter.all": { en: "All", ko: "전체" },
+  "filter.tags": { en: "Filter by Tag", ko: "태그로 필터" },
+  "filter.clear": { en: "Clear Filter", ko: "필터 초기화" },
+  "breadcrumb.root": { en: "Home", ko: "홈" },
 } as const;
 
 export type TranslationKey = keyof typeof translations;

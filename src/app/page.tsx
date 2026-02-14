@@ -10,34 +10,36 @@ export default function HomePage() {
     metrics = null;
   }
 
-  const statusGroups = [
+  // Calculate RAM percentage
+  const ramPercentage = metrics
+    ? Math.round((metrics.memory.used / metrics.memory.total) * 100)
+    : 0;
+
+  const homeServerMetrics = [
+    { label: "UPTIME", value: metrics ? formatUptime(metrics.uptime) : "N/A" },
+    { label: "CONTAINERS", value: metrics ? `${metrics.containers.length} active` : "N/A" },
     {
-      labelKey: "status.homeserver" as const,
-      items: [
-        { label: "UPTIME", value: metrics ? formatUptime(metrics.uptime) : "N/A" },
-        { label: "CONTAINERS", value: metrics ? `${metrics.containers.length} active` : "N/A" },
-        {
-          label: "RAM",
-          value: metrics
-            ? `${formatBytes(metrics.memory.used)} / ${formatBytes(metrics.memory.total)}`
-            : "N/A",
-        },
-      ],
+      label: "RAM",
+      value: metrics
+        ? `${formatBytes(metrics.memory.used)} / ${formatBytes(metrics.memory.total)}`
+        : "N/A",
+      percentage: ramPercentage,
     },
-    {
-      labelKey: "status.ai" as const,
-      items: [
-        { label: "TOKEN IN", value: "\u2014" },
-        { label: "TOKEN OUT", value: "\u2014" },
-        { label: "TOKEN/S", value: "\u2014" },
-        { label: "MODEL", value: "\u2014" },
-      ],
-    },
+  ];
+
+  const aiMetrics = [
+    { label: "TOKEN IN", value: "\u2014" },
+    { label: "TOKEN OUT", value: "\u2014" },
+    { label: "TOKEN/S", value: "\u2014" },
+    { label: "MODEL", value: "\u2014" },
   ];
 
   return (
     <BootSequence>
-      <HomeContent statusGroups={statusGroups} />
+      <HomeContent
+        homeServerMetrics={homeServerMetrics}
+        aiMetrics={aiMetrics}
+      />
     </BootSequence>
   );
 }

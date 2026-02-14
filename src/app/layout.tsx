@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/auth";
-import { LanguageProvider } from "@/context/LanguageContext";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
+import ClientLayout from "@/components/layout/ClientLayout";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -26,17 +24,24 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="ko">
-      <body className="min-h-screen bg-[#1a1a2e] text-[#d4d4dc] font-sans antialiased">
-        <LanguageProvider>
-          <div className="flex h-screen overflow-hidden">
-            <Sidebar isAdmin={isAdmin} />
-            <main className="flex-1 flex flex-col h-screen overflow-hidden relative bg-[#1a1a2e] z-10">
-              <Header />
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-10">{children}</div>
-            </main>
-          </div>
-        </LanguageProvider>
+    <html lang="ko" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const theme = localStorage.getItem('theme') ||
+                  (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+                document.documentElement.classList.add(theme);
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
+      <body className="min-h-screen bg-background text-foreground antialiased transition-colors duration-300">
+        <ClientLayout isAdmin={isAdmin}>
+          {children}
+        </ClientLayout>
       </body>
     </html>
   );

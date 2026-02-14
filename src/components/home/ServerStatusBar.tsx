@@ -21,20 +21,28 @@ export default function ServerStatusBar({ groups }: ServerStatusBarProps) {
   const { t } = useLanguage();
 
   return (
-    <div className="space-y-2">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {groups.map((group, gi) => (
-        <div key={gi} className="border border-[#2e2e4a] bg-[#22223a]/80 rounded-lg px-4 py-3 font-mono text-xs">
-          <div className="flex items-center flex-wrap gap-x-4 gap-y-2">
-            <span className="flex items-center gap-2 text-[#d4a054] shrink-0">
-              <span className="w-2 h-2 bg-[#d4a054] rounded-full animate-pulse" />
+        <div key={gi} className="border-l-2 border-[#09090B] pl-6 py-2">
+          <div className="space-y-4">
+            <h3
+              className="text-xs uppercase tracking-[0.2em] text-[#71717A] font-semibold mb-6"
+              style={{ fontFamily: 'Archivo, sans-serif' }}
+            >
               {t(group.labelKey)}
-            </span>
-            {group.items.map((item, i) => (
-              <div key={i} className="flex items-center gap-2 shrink-0">
-                <span className="text-[#5a5a72]">{item.label}:</span>
-                <span className="text-[#d4d4dc]">{item.value}</span>
-              </div>
-            ))}
+            </h3>
+            <div className="space-y-3">
+              {group.items.map((item, i) => (
+                <div key={i} className="flex items-baseline gap-3">
+                  <span className="text-xs text-[#71717A] uppercase tracking-wider font-medium min-w-[120px]">
+                    {item.label}
+                  </span>
+                  <span className="text-sm text-[#09090B] font-medium">
+                    {item.value}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       ))}

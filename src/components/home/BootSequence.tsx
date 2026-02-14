@@ -1,74 +1,74 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useLanguage } from "@/context/LanguageContext";
-import type { TranslationKey } from "@/lib/i18n";
-
-const bootLineKeys: { textKey: TranslationKey; status?: string; color: string }[] = [
-  { textKey: "boot.init", color: "text-[#5a5a72]" },
-  { textKey: "boot.modules", status: "DONE", color: "text-[#8888a0]" },
-  { textKey: "boot.mount", status: "MOUNTED", color: "text-[#8888a0]" },
-  { textKey: "boot.ui", status: "READY", color: "text-[#8888a0]" },
-];
 
 export default function BootSequence({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [booted, setBooted] = useState(false);
-  const [visibleLines, setVisibleLines] = useState(0);
-  const { t } = useLanguage();
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && sessionStorage.getItem("booted")) {
-      setBooted(true);
+    // Skip loading animation if already loaded this session
+    if (typeof window !== "undefined" && sessionStorage.getItem("loaded")) {
+      setLoaded(true);
       return;
     }
 
-    const interval = setInterval(() => {
-      setVisibleLines((prev) => {
-        if (prev >= bootLineKeys.length) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setBooted(true);
-            if (typeof window !== "undefined") {
-              sessionStorage.setItem("booted", "1");
-            }
-          }, 800);
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, 400);
+    // Minimal delay for smooth transition
+    const timer = setTimeout(() => {
+      setLoaded(true);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("loaded", "1");
+      }
+    }, 600);
 
-    return () => clearInterval(interval);
+    return () => clearTimeout(timer);
   }, []);
 
-  if (booted) {
+  if (loaded) {
     return <>{children}</>;
   }
 
+  // Swiss minimalist skeleton loader
   return (
-    <div className="min-h-[80vh] bg-[#1a1a2e] text-[#d4d4dc] font-mono flex flex-col justify-end pb-20">
-      <div className="space-y-1 animate-pulse">
-        {bootLineKeys.slice(0, visibleLines).map((line, i) => (
-          <p key={i} className={line.color}>
-            {t(line.textKey)}{" "}
-            {line.status && (
-              <span className="text-[#d4a054]">{line.status}</span>
-            )}
-          </p>
-        ))}
-        {visibleLines >= bootLineKeys.length && (
-          <>
-            <br />
-            <p className="text-[#d4d4dc] text-lg font-bold">
-              {t("boot.welcome")}
-            </p>
-            <span className="inline-block w-3 h-5 bg-[#d4a054] animate-bounce ml-1" />
-          </>
-        )}
+    <div className="max-w-7xl mx-auto space-y-16 md:space-y-24 animate-pulse">
+      {/* Skeleton for status bars */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="border-l-2 border-border pl-6 py-2 space-y-4">
+          <div className="h-3 bg-hover rounded w-24"></div>
+          <div className="space-y-3">
+            <div className="h-2 bg-hover rounded w-32"></div>
+            <div className="h-2 bg-hover rounded w-28"></div>
+            <div className="h-2 bg-hover rounded w-36"></div>
+          </div>
+        </div>
+        <div className="border-l-2 border-border pl-6 py-2 space-y-4">
+          <div className="h-3 bg-hover rounded w-20"></div>
+          <div className="space-y-3">
+            <div className="h-2 bg-hover rounded w-28"></div>
+            <div className="h-2 bg-hover rounded w-32"></div>
+            <div className="h-2 bg-hover rounded w-24"></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Skeleton for diagram */}
+      <div className="space-y-6">
+        <div className="h-6 bg-hover rounded w-48"></div>
+        <div className="h-64 bg-hover rounded"></div>
+      </div>
+
+      {/* Skeleton for intro text */}
+      <div className="grid grid-cols-12 gap-8">
+        <div className="col-span-12 md:col-span-10 md:col-start-2 lg:col-span-8 lg:col-start-3 space-y-4">
+          <div className="h-3 bg-hover rounded w-32"></div>
+          <div className="space-y-2">
+            <div className="h-4 bg-hover rounded"></div>
+            <div className="h-4 bg-hover rounded w-5/6"></div>
+          </div>
+        </div>
       </div>
     </div>
   );

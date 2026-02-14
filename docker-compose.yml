@@ -1,18 +1,31 @@
+version: '3.8'
+
 services:
   blog:
     build: .
+    container_name: blog
+    restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "3001:3001"  # Temporary: Direct access for testing redesign
+    expose:
+      - "3001"
     volumes:
-      - blog-data:/app/prisma      # Persist SQLite database
-      - /var/run/docker.sock:/var/run/docker.sock:ro  # For container metrics
-      - /sys/class/thermal:/sys/class/thermal:ro       # For CPU temperature
+      - blog-data:/app/prisma
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys/class/thermal:/sys/class/thermal:ro
     environment:
       - DATABASE_URL=file:/app/prisma/blog.db
-      - JWT_SECRET=${JWT_SECRET:-development}
-      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
-    restart: unless-stopped
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_USERNAME=${ADMIN_USERNAME}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    networks:
+      - proxy-net  # Connect to NPM network
+
+networks:
+  proxy-net:
+    external: true  # Use existing NPM network
+  default:
+    driver: bridge
 
 volumes:
   blog-data:

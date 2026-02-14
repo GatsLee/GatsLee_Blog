@@ -2,51 +2,60 @@
 
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
-import ServerStatusBar from "@/components/home/ServerStatusBar";
-import ArchitectureDiagram from "@/components/home/ArchitectureDiagram";
-import type { TranslationKey } from "@/lib/i18n";
+import MetricsPanel from "@/components/home/MetricsPanel";
+import BuildProgressTimeline from "@/components/home/BuildProgressTimeline";
 
-interface StatusItem {
+interface MetricItem {
   label: string;
   value: string;
-}
-
-interface StatusGroup {
-  labelKey: TranslationKey;
-  items: StatusItem[];
+  percentage?: number;
 }
 
 interface HomeContentProps {
-  statusGroups: StatusGroup[];
+  homeServerMetrics: MetricItem[];
+  aiMetrics: MetricItem[];
 }
 
-export default function HomeContent({ statusGroups }: HomeContentProps) {
+export default function HomeContent({ homeServerMetrics, aiMetrics }: HomeContentProps) {
   const { t } = useLanguage();
 
   return (
-    <div className="max-w-6xl mx-auto animate-fadeIn space-y-8">
-      {/* Server Status Bar */}
-      <ServerStatusBar groups={statusGroups} />
-
-      {/* Architecture Diagram */}
-      <ArchitectureDiagram />
-
-      {/* Introduction */}
-      <div className="border border-[#2e2e4a] bg-[#22223a]/50 rounded-lg p-6 md:p-8">
-        <p className="text-[10px] text-[#5a5a72] font-mono uppercase tracking-widest mb-4">
-          {t("home.readme")}
-        </p>
-        <p className="text-[#b0b0bc] leading-relaxed text-sm md:text-base">
-          {t("home.intro")}{" "}
-          <Link
-            href="/guestlogs"
-            className="text-[#d4a054] hover:underline font-mono"
+    <div className="max-w-7xl mx-auto animate-fadeIn space-y-8">
+      {/* Top Section - Introduction + Metrics (2 columns) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left - Introduction */}
+        <section className="bg-surface border border-border rounded-lg p-6 transition-colors h-full">
+          <p
+            className="text-xs text-muted uppercase tracking-[0.2em] mb-4 font-semibold"
+            style={{ fontFamily: 'Archivo, sans-serif' }}
           >
-            {t("home.intro.link")}
-          </Link>
-          {t("home.intro.end")}
-        </p>
+            {t("home.readme")}
+          </p>
+          <p className="text-foreground leading-relaxed text-sm">
+            {t("home.intro")}{" "}
+            <Link
+              href="/guestlogs"
+              className="text-accent hover:underline font-medium"
+            >
+              {t("home.intro.link")}
+            </Link>
+            {t("home.intro.end")}
+          </p>
+        </section>
+
+        {/* Right - Metrics Panel */}
+        <section className="h-full">
+          <MetricsPanel
+            homeServerMetrics={homeServerMetrics}
+            aiMetrics={aiMetrics}
+          />
+        </section>
       </div>
+
+      {/* Bottom Section - Build Progress Timeline (full width) */}
+      <section>
+        <BuildProgressTimeline />
+      </section>
     </div>
   );
 }

@@ -2,232 +2,144 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Network, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { useTheme } from "@/context/ThemeContext";
 
 type DiagramType = "full" | "blog" | "gatsai" | "infrastructure";
 
-const DIAGRAM_DEFINITIONS: Record<DiagramType, string> = {
-  full: `graph LR
-    classDef default fill:#2a2a42,stroke:#4a4a6a,stroke-width:1px,color:#d4d4dc
-    classDef external fill:#1a1a2e,stroke:#8888a0,stroke-width:2px,color:#d4d4dc
-    classDef gateway fill:#3d2e1a,stroke:#d4a054,stroke-width:2px,color:#d4d4dc
-    classDef app fill:#1a2e2a,stroke:#5ab896,stroke-width:2px,color:#d4d4dc
-    classDef agent fill:#2e1a3d,stroke:#a078c8,stroke-width:2px,color:#d4d4dc
-    classDef ai_engine fill:#1a1a3d,stroke:#7878b8,stroke-width:2px,color:#d4d4dc
-    classDef infra fill:#2a2a42,stroke:#4a4a6a,stroke-width:1px,color:#b0b0bc
+// Theme-aware diagram definitions will be generated dynamically
+const getDiagramDefinition = (type: DiagramType, isDark: boolean): string => {
+  const colors = isDark ? {
+    bg: '#18181B',
+    surface: '#27272A',
+    border: '#3F3F46',
+    text: '#FAFAFA',
+    textMuted: '#A1A1AA',
+    accent: '#3B82F6',
+    node: '#27272A',
+    nodeBorder: '#3F3F46',
+  } : {
+    bg: '#FFFFFF',
+    surface: '#F4F4F5',
+    border: '#E4E4E7',
+    text: '#09090B',
+    textMuted: '#71717A',
+    accent: '#2563EB',
+    node: '#FFFFFF',
+    nodeBorder: '#E4E4E7',
+  };
 
-    User((User / Internet)):::external
+  const classDefBase = `
+classDef default fill:${colors.node},stroke:${colors.nodeBorder},stroke-width:1.5px,color:${colors.text}
+classDef external fill:${colors.surface},stroke:${colors.accent},stroke-width:2px,color:${colors.text}
+classDef gateway fill:${colors.node},stroke:${colors.accent},stroke-width:2px,color:${colors.text}
+classDef app fill:${colors.node},stroke:${colors.nodeBorder},stroke-width:1.5px,color:${colors.text}
+classDef agent fill:${colors.node},stroke:${colors.accent},stroke-width:2px,color:${colors.text}
+classDef ai_engine fill:${colors.surface},stroke:${colors.accent},stroke-width:2px,color:${colors.text}
+classDef infra fill:${colors.node},stroke:${colors.nodeBorder},stroke-width:1px,color:${colors.textMuted}
+classDef db fill:${colors.node},stroke:${colors.nodeBorder},stroke-width:1.5px,color:${colors.text}
+classDef monitor fill:${colors.node},stroke:${colors.accent},stroke-width:1.5px,color:${colors.text}
+classDef tool fill:${colors.node},stroke:${colors.nodeBorder},stroke-width:1.5px,color:${colors.text}`;
 
-    subgraph Home_Server ["🏠 Home Server (Main Host)"]
-        direction TB
+  const diagrams: Record<DiagramType, string> = {
+    full: `graph LR
+  User((User)):::external
 
-        subgraph Service_Layer ["Service & Logic Layer"]
-            direction LR
-            NPM[/"Nginx Proxy<br/>Manager"/]:::gateway
+  subgraph Home_Server ["Home Server"]
+    NPM[/"Nginx Proxy Manager"/]:::gateway
+    BlogApp["Blog"]:::app
+    Portfolio["Portfolio"]:::app
+    GatsAI["Gats AI Agent"]:::agent
 
-            subgraph Apps ["Web Services"]
-                direction TB
-                BlogApp["Tech Blog"]:::app
-                Portfolio["Portfolio"]:::app
-            end
+    Portainer["Portainer"]:::infra
+    Prometheus["Prometheus"]:::infra
+    Grafana["Grafana"]:::infra
+  end
 
-            GatsAI["🤖 Gats AI Agent<br/>(Orchestrator)"]:::agent
-        end
+  subgraph Mac_Studio ["Mac Studio"]
+    LLM_Engine["LLM Engine (vLLM)"]:::ai_engine
+  end
 
-        subgraph Infra_Layer ["Infrastructure (Docker Containers)"]
-            direction LR
-            Portainer["Portainer"]:::infra
-            Prometheus["Prometheus"]:::infra
-            Grafana["Grafana"]:::infra
-            NodeExp["Node-Exporter"]:::infra
-        end
-    end
+  User ==> NPM
+  NPM --> BlogApp
+  NPM --> Portfolio
+  BlogApp <--> GatsAI
+  GatsAI <== "API" ==> LLM_Engine
 
-    subgraph Mac_Studio ["🍎 Mac Studio (AI Brain)"]
-        direction TB
-        LLM_Engine["LLM Inference Engine<br/>(vLLM / Qwen 2.5)"]:::ai_engine
-        AI_Workflow["AI Workflow & Ops"]:::ai_engine
-    end
+  Prometheus -.-> Grafana
 
-    style Home_Server fill:#22223a,stroke:#3a3a52,color:#d4d4dc
-    style Mac_Studio fill:#22223a,stroke:#7878b8,color:#d4d4dc
-    style Service_Layer fill:transparent,stroke:none,color:#d4d4dc
-    style Infra_Layer fill:#2a2a42,stroke:#3a3a52,stroke-dasharray: 5 5,color:#b0b0bc
-    style Apps fill:transparent,stroke:none,color:#d4d4dc
+${classDefBase}`,
 
-    User ==> NPM
-    User <== "Direct API" ==> GatsAI
+    blog: `graph TB
+  User((User)):::external
 
-    NPM --> BlogApp
-    NPM --> Portfolio
+  subgraph Blog_Stack ["Blog Architecture"]
+    NPM[/"Nginx Proxy Manager"/]:::gateway
+    NextJS["Next.js 16"]:::app
+    API["API Routes"]:::app
+    Prisma["Prisma ORM"]:::db
+    SQLite["SQLite"]:::db
+  end
 
-    BlogApp <--> GatsAI
-    Portfolio <--> GatsAI
+  User --> NPM
+  NPM --> NextJS
+  NextJS --> API
+  API --> Prisma
+  Prisma --> SQLite
 
-    GatsAI <== "Inference API" ==> LLM_Engine
+${classDefBase}`,
 
-    NodeExp -.-> Prometheus
-    Prometheus -.-> Grafana
+    gatsai: `graph LR
+  User((User)):::external
 
-    linkStyle default stroke:#6a6a8a,stroke-width:2px,fill:none`,
+  subgraph AI_System ["Gats AI System"]
+    GatsAI["Gats AI Agent"]:::agent
+    TaskQueue["Task Queue"]:::agent
 
-  blog: `graph TB
-    classDef default fill:#2a2a42,stroke:#4a4a6a,stroke-width:1px,color:#d4d4dc
-    classDef external fill:#1a1a2e,stroke:#8888a0,stroke-width:2px,color:#d4d4dc
-    classDef gateway fill:#3d2e1a,stroke:#d4a054,stroke-width:2px,color:#d4d4dc
-    classDef app fill:#1a2e2a,stroke:#5ab896,stroke-width:2px,color:#d4d4dc
-    classDef db fill:#1a2e3d,stroke:#5a9ab8,stroke-width:2px,color:#d4d4dc
+    vLLM["vLLM Server"]:::ai_engine
+    Qwen["Qwen 2.5"]:::ai_engine
 
-    User((User)):::external
+    WebScraper["Web Scraper"]:::tool
+    CodeGen["Code Generator"]:::tool
+  end
 
-    subgraph Blog_Stack ["📝 Tech Blog Architecture"]
-        direction TB
+  User <--> GatsAI
+  GatsAI --> TaskQueue
+  GatsAI <--> vLLM
+  vLLM --> Qwen
+  GatsAI --> WebScraper
+  GatsAI --> CodeGen
 
-        NPM[/"Nginx Proxy Manager<br/>(Reverse Proxy)"/]:::gateway
+${classDefBase}`,
 
-        subgraph Frontend ["Frontend Layer"]
-            NextJS["Next.js 16<br/>(App Router)"]:::app
-            React["React 19<br/>(Server Components)"]:::app
-        end
+    infrastructure: `graph TB
+  subgraph Home_Server ["Home Server"]
+    Portainer["Portainer"]:::infra
+    Prometheus["Prometheus"]:::monitor
+    Grafana["Grafana"]:::monitor
+    NodeExp["Node Exporter"]:::monitor
 
-        subgraph Backend ["Backend Layer"]
-            API["API Routes<br/>(REST)"]:::app
-            Auth["JWT Auth<br/>(jose)"]:::app
-        end
+    Storage["Storage Volumes"]:::infra
+    Network["Docker Networks"]:::infra
+  end
 
-        subgraph Data ["Data Layer"]
-            Prisma["Prisma ORM"]:::db
-            SQLite["SQLite<br/>(blog.db)"]:::db
-        end
-    end
+  subgraph Mac_Studio ["Mac Studio"]
+    LLM["LLM Engine"]:::ai_engine
+    Workflow["AI Workflow"]:::ai_engine
+  end
 
-    User --> NPM
-    NPM --> NextJS
-    NextJS --> React
-    NextJS --> API
-    API --> Auth
-    API --> Prisma
-    Prisma --> SQLite
+  NodeExp --> Prometheus
+  Prometheus --> Grafana
+  Home_Server <--> Mac_Studio
 
-    style Blog_Stack fill:#22223a,stroke:#3a3a52,color:#d4d4dc
-    style Frontend fill:transparent,stroke:#3a3a52,stroke-dasharray: 3 3,color:#d4d4dc
-    style Backend fill:transparent,stroke:#3a3a52,stroke-dasharray: 3 3,color:#d4d4dc
-    style Data fill:transparent,stroke:#3a3a52,stroke-dasharray: 3 3,color:#d4d4dc
+${classDefBase}`
+  };
 
-    linkStyle default stroke:#6a6a8a,stroke-width:2px,fill:none`,
-
-  gatsai: `graph LR
-    classDef default fill:#2a2a42,stroke:#4a4a6a,stroke-width:1px,color:#d4d4dc
-    classDef external fill:#1a1a2e,stroke:#8888a0,stroke-width:2px,color:#d4d4dc
-    classDef agent fill:#2e1a3d,stroke:#a078c8,stroke-width:2px,color:#d4d4dc
-    classDef ai fill:#1a1a3d,stroke:#7878b8,stroke-width:2px,color:#d4d4dc
-    classDef tool fill:#3d2e1a,stroke:#d4a054,stroke-width:2px,color:#d4d4dc
-
-    User((User / API)):::external
-
-    subgraph AI_System ["🤖 Gats AI Agent System"]
-        direction TB
-
-        subgraph Orchestration ["Agent Orchestration"]
-            GatsAI["Gats AI<br/>(Main Agent)"]:::agent
-            TaskQueue["Task Queue<br/>(Async)"]:::agent
-        end
-
-        subgraph LLM_Layer ["LLM Backend"]
-            direction LR
-            vLLM["vLLM Server<br/>(Mac Studio)"]:::ai
-            Qwen["Qwen 2.5<br/>(7B/14B)"]:::ai
-        end
-
-        subgraph Tools ["Agent Tools"]
-            direction LR
-            WebScraper["Web Scraper"]:::tool
-            CodeGen["Code Generator"]:::tool
-            FileOps["File Operations"]:::tool
-        end
-    end
-
-    User <--> GatsAI
-    GatsAI --> TaskQueue
-    GatsAI <--> vLLM
-    vLLM --> Qwen
-    GatsAI --> WebScraper
-    GatsAI --> CodeGen
-    GatsAI --> FileOps
-
-    style AI_System fill:#22223a,stroke:#3a3a52,color:#d4d4dc
-    style Orchestration fill:transparent,stroke:none,color:#d4d4dc
-    style LLM_Layer fill:#2a2a42,stroke:#7878b8,stroke-dasharray: 3 3,color:#d4d4dc
-    style Tools fill:transparent,stroke:none,color:#d4d4dc
-
-    linkStyle default stroke:#6a6a8a,stroke-width:2px,fill:none`,
-
-  infrastructure: `graph TB
-    classDef default fill:#2a2a42,stroke:#4a4a6a,stroke-width:1px,color:#d4d4dc
-    classDef infra fill:#2a2a42,stroke:#4a4a6a,stroke-width:1px,color:#b0b0bc
-    classDef monitor fill:#1a3d2a,stroke:#5ab896,stroke-width:2px,color:#d4d4dc
-    classDef ai_engine fill:#1a1a3d,stroke:#7878b8,stroke-width:2px,color:#d4d4dc
-
-    subgraph Home_Server ["🏠 Home Server Infrastructure"]
-        direction TB
-
-        subgraph Container_Layer ["Docker Containers"]
-            direction LR
-            Portainer["Portainer<br/>(Management)"]:::infra
-            Prometheus["Prometheus<br/>(Metrics)"]:::monitor
-            Grafana["Grafana<br/>(Visualization)"]:::monitor
-            NodeExp["Node-Exporter<br/>(Host Metrics)"]:::monitor
-        end
-
-        Storage["Storage Layer<br/>(Volumes & Bind Mounts)"]:::infra
-        Network["Docker Networks<br/>(Bridge & Host)"]:::infra
-    end
-
-    subgraph Mac_Studio ["🍎 Mac Studio (AI Infrastructure)"]
-        direction TB
-        LLM["LLM Inference Engine<br/>(vLLM / Qwen 2.5)"]:::ai_engine
-        Workflow["AI Workflow Engine<br/>(Automation)"]:::ai_engine
-    end
-
-    NodeExp --> Prometheus
-    Prometheus --> Grafana
-    Container_Layer --> Storage
-    Container_Layer --> Network
-
-    Home_Server <--> Mac_Studio
-
-    style Home_Server fill:#22223a,stroke:#3a3a52,color:#d4d4dc
-    style Mac_Studio fill:#22223a,stroke:#7878b8,color:#d4d4dc
-    style Container_Layer fill:transparent,stroke:#3a3a52,stroke-dasharray: 5 5,color:#b0b0bc
-
-    linkStyle default stroke:#6a6a8a,stroke-width:2px,fill:none`
+  return diagrams[type];
 };
-
-// Edge indices that should have streaming animation for each diagram type
-const ACTIVE_EDGE_INDICES: Record<DiagramType, number[]> = {
-  full: [0, 2, 3, 7, 8],
-  blog: [0, 1, 2, 3],
-  gatsai: [0, 1, 2],
-  infrastructure: [0, 1]
-};
-
-function addStreamingClasses(svgString: string, diagramType: DiagramType): string {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(svgString, "text/html");
-  const edgeGroups = doc.querySelectorAll(".edgePaths > g");
-  const activeIndices = ACTIVE_EDGE_INDICES[diagramType];
-  edgeGroups.forEach((group, index) => {
-    if (activeIndices.includes(index)) {
-      const path = group.querySelector("path");
-      if (path) {
-        path.classList.add("streaming-edge");
-      }
-    }
-  });
-  const svgEl = doc.querySelector("svg");
-  return svgEl ? svgEl.outerHTML : svgString;
-}
 
 export default function ArchitectureDiagram() {
+  const [mounted, setMounted] = useState(false);
+  const { theme } = useTheme();
   const [selectedDiagram, setSelectedDiagram] = useState<DiagramType>("full");
   const [svgContent, setSvgContent] = useState<string>("");
   const [isLoaded, setIsLoaded] = useState(false);
@@ -238,47 +150,54 @@ export default function ArchitectureDiagram() {
   const mermaidRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Prevent SSR rendering
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     async function renderDiagram() {
       try {
         setIsLoaded(false);
 
         if (!mermaidRef.current) {
           const mermaid = (await import("mermaid")).default;
-          mermaid.initialize({
-            startOnLoad: false,
-            theme: "dark",
-            themeVariables: {
-              primaryColor: "#2a2a42",
-              primaryTextColor: "#d4d4dc",
-              primaryBorderColor: "#3a3a52",
-              lineColor: "#6a6a8a",
-              secondaryColor: "#22223a",
-              tertiaryColor: "#1a1a2e",
-              background: "#1a1a2e",
-              mainBkg: "#2a2a42",
-              nodeBorder: "#3a3a52",
-              clusterBkg: "#22223a",
-              clusterBorder: "#3a3a52",
-              titleColor: "#d4d4dc",
-              edgeLabelBackground: "#22223a",
-            },
-            flowchart: {
-              htmlLabels: true,
-              curve: "basis",
-              useMaxWidth: true,
-            },
-          });
           mermaidRef.current = mermaid;
         }
 
-        const diagramId = `arch-diagram-${selectedDiagram}`;
-        const { svg } = await mermaidRef.current.render(
-          diagramId,
-          DIAGRAM_DEFINITIONS[selectedDiagram]
-        );
-        const animatedSvg = addStreamingClasses(svg, selectedDiagram);
-        setSvgContent(animatedSvg);
+        const isDark = theme === 'dark';
+        const colors = isDark ? {
+          primaryColor: '#27272A',
+          primaryTextColor: '#FAFAFA',
+          primaryBorderColor: '#3F3F46',
+          lineColor: '#71717A',
+          background: '#18181B',
+        } : {
+          primaryColor: '#FFFFFF',
+          primaryTextColor: '#09090B',
+          primaryBorderColor: '#E4E4E7',
+          lineColor: '#71717A',
+          background: '#FAFAFA',
+        };
+
+        mermaidRef.current.initialize({
+          startOnLoad: false,
+          theme: 'base',
+          themeVariables: colors,
+          flowchart: {
+            htmlLabels: true,
+            curve: 'basis',
+            useMaxWidth: true,
+          },
+        });
+
+        const diagramId = `arch-diagram-${selectedDiagram}-${theme}`;
+        const definition = getDiagramDefinition(selectedDiagram, isDark);
+        const { svg } = await mermaidRef.current.render(diagramId, definition);
+
+        setSvgContent(svg);
         setIsLoaded(true);
       } catch (err) {
         console.error("Mermaid render error:", err);
@@ -287,7 +206,7 @@ export default function ArchitectureDiagram() {
     }
 
     renderDiagram();
-  }, [selectedDiagram]);
+  }, [selectedDiagram, theme, mounted]);
 
   const handleZoomIn = () => setZoom((prev) => Math.min(prev + 0.2, 3));
   const handleZoomOut = () => setZoom((prev) => Math.max(prev - 0.2, 0.5));
@@ -314,35 +233,45 @@ export default function ArchitectureDiagram() {
 
   const diagrams: { type: DiagramType; label: string }[] = [
     { type: "full", label: "Full System" },
-    { type: "blog", label: "Tech Blog" },
-    { type: "gatsai", label: "Gats AI" },
+    { type: "blog", label: "Blog" },
+    { type: "gatsai", label: "AI Agent" },
     { type: "infrastructure", label: "Infrastructure" },
   ];
 
+  if (!mounted) {
+    return (
+      <div className="bg-surface border border-border rounded p-6 animate-pulse">
+        <div className="h-6 bg-hover rounded w-48 mb-8"></div>
+        <div className="h-96 bg-hover rounded"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="mermaid-container bg-[#22223a] border border-[#2e2e4a] rounded-lg p-6 relative overflow-hidden">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-bold text-[#d4d4dc] flex items-center">
-          <Network className="mr-2 text-[#d4a054]" size={18} />
-          SYSTEM ARCHITECTURE
+    <div className="bg-surface border border-border rounded p-6 relative overflow-hidden transition-colors duration-300">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <h3
+          className="text-lg font-semibold text-foreground flex items-center tracking-tight"
+          style={{ fontFamily: 'Archivo, sans-serif' }}
+        >
+          <Network className="mr-3 text-accent" size={20} strokeWidth={1.5} />
+          System Architecture
         </h3>
-        <span className="text-[10px] font-mono text-[#5a5a72] uppercase tracking-wider">
-          Infrastructure Map
-        </span>
       </div>
 
-      {/* Control Bar */}
-      <div className="flex justify-between items-center mb-6 gap-4">
-        {/* Toggle Buttons */}
-        <div className="flex gap-2 flex-wrap">
+      {/* Controls */}
+      <div className="flex justify-between items-center mb-8 gap-4 flex-wrap">
+        {/* Diagram Selector */}
+        <div className="flex gap-2">
           {diagrams.map((diagram) => (
             <button
               key={diagram.type}
               onClick={() => setSelectedDiagram(diagram.type)}
-              className={`px-3 py-2 text-xs font-mono uppercase tracking-wider transition-colors rounded cursor-pointer ${
+              className={`px-4 py-2 text-sm font-medium transition-all rounded cursor-pointer ${
                 selectedDiagram === diagram.type
-                  ? "bg-[#d4a054] text-[#1a1a2e] font-bold"
-                  : "bg-[#2e2e4a] text-[#8888a0] hover:bg-[#3a3a5a] hover:text-[#d4d4dc]"
+                  ? "bg-foreground text-background"
+                  : "text-muted hover:text-foreground hover:bg-hover"
               }`}
             >
               {diagram.label}
@@ -350,42 +279,23 @@ export default function ArchitectureDiagram() {
           ))}
         </div>
 
-        {/* Zoom Controls */}
-        <div className="flex gap-2">
-          <button
-            onClick={handleZoomOut}
-            className="p-2 bg-[#2e2e4a] text-[#8888a0] hover:bg-[#3a3a5a] hover:text-[#d4d4dc] transition-colors rounded cursor-pointer"
-            title="Zoom Out"
-          >
-            <ZoomOut size={16} />
-          </button>
-          <button
-            onClick={handleReset}
-            className="p-2 bg-[#2e2e4a] text-[#8888a0] hover:bg-[#3a3a5a] hover:text-[#d4d4dc] transition-colors rounded cursor-pointer"
-            title="Reset View"
-          >
-            <Maximize2 size={16} />
-          </button>
-          <button
-            onClick={handleZoomIn}
-            className="p-2 bg-[#2e2e4a] text-[#8888a0] hover:bg-[#3a3a5a] hover:text-[#d4d4dc] transition-colors rounded cursor-pointer"
-            title="Zoom In"
-          >
-            <ZoomIn size={16} />
-          </button>
-        </div>
       </div>
 
+      {/* Diagram Display */}
       {!isLoaded && (
-        <div className="h-64 flex items-center justify-center text-[#5a5a72] font-mono text-sm animate-pulse">
-          Rendering architecture diagram...
+        <div className="h-96 flex items-center justify-center">
+          <div className="space-y-3 w-full max-w-md animate-pulse">
+            <div className="h-3 bg-hover rounded"></div>
+            <div className="h-3 bg-hover rounded w-5/6"></div>
+            <div className="h-3 bg-hover rounded w-4/6"></div>
+          </div>
         </div>
       )}
 
-      {svgContent ? (
+      {svgContent && isLoaded && (
         <div
           ref={containerRef}
-          className="w-full overflow-hidden relative"
+          className="w-full overflow-hidden relative bg-background/50 rounded border border-border"
           style={{ cursor: isDragging ? "grabbing" : "grab", height: "500px" }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -400,17 +310,40 @@ export default function ArchitectureDiagram() {
             }}
             dangerouslySetInnerHTML={{ __html: svgContent }}
           />
-        </div>
-      ) : (
-        isLoaded && (
-          <div className="h-32 flex items-center justify-center text-[#5a5a72] font-mono text-sm">
-            Failed to render diagram.
+
+          {/* Floating Zoom Controls - Bottom Right Corner */}
+          <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-20">
+            <button
+              onClick={handleZoomIn}
+              className="w-10 h-10 flex items-center justify-center bg-surface border border-border hover:border-accent text-muted hover:text-accent transition-all rounded-lg shadow-lg cursor-pointer"
+              aria-label="Zoom in"
+              title="Zoom In"
+            >
+              <ZoomIn size={18} strokeWidth={1.5} />
+            </button>
+            <button
+              onClick={handleReset}
+              className="w-10 h-10 flex items-center justify-center bg-surface border border-border hover:border-accent text-muted hover:text-accent transition-all rounded-lg shadow-lg cursor-pointer"
+              aria-label="Reset view"
+              title="Reset View"
+            >
+              <Maximize2 size={18} strokeWidth={1.5} />
+            </button>
+            <button
+              onClick={handleZoomOut}
+              className="w-10 h-10 flex items-center justify-center bg-surface border border-border hover:border-accent text-muted hover:text-accent transition-all rounded-lg shadow-lg cursor-pointer"
+              aria-label="Zoom out"
+              title="Zoom Out"
+            >
+              <ZoomOut size={18} strokeWidth={1.5} />
+            </button>
           </div>
-        )
+        </div>
       )}
 
-      <div className="mt-4 text-[10px] text-[#5a5a72] font-mono text-center">
-        Click and drag to pan • Use zoom controls to adjust view • Zoom: {(zoom * 100).toFixed(0)}%
+      {/* Footer */}
+      <div className="mt-6 text-xs text-muted text-center">
+        Click and drag to pan • Zoom: {(zoom * 100).toFixed(0)}%
       </div>
     </div>
   );

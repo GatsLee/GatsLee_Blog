@@ -19,11 +19,11 @@ export default async function PostPage({
 
   return (
     <div className="max-w-5xl mx-auto animate-fadeIn">
-      <div className="bg-[#22223a] min-h-[600px] border border-[#2e2e4a] rounded-lg p-8 relative">
+      <div className="bg-surface min-h-[600px] border border-border rounded-lg p-8 md:p-12 relative transition-colors">
         <PostBackLink />
 
-        <div className="border-b border-[#2e2e4a] pb-8 mb-8 mt-4">
-          <h1 className="text-3xl font-bold text-[#d4d4dc] mb-4 tracking-tight">
+        <div className="border-b border-border pb-8 mb-8 mt-4">
+          <h1 className="text-3xl md:text-4xl font-semibold text-foreground mb-4 tracking-tight" style={{ fontFamily: 'Archivo, sans-serif' }}>
             {post.title}
           </h1>
           <PostMetaInfo
@@ -33,7 +33,7 @@ export default async function PostPage({
         </div>
 
         <div
-          className="prose prose-invert max-w-none text-sm leading-7"
+          className="prose prose-invert dark:prose-invert prose-zinc max-w-none text-base leading-7 text-foreground"
           dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
         />
 

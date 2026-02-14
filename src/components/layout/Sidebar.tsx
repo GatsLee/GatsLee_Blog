@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import type { TranslationKey } from "@/lib/i18n";
 import {
-  Server,
   HardDrive,
   FileText,
   AlertCircle,
@@ -41,76 +40,65 @@ export default function Sidebar({ isAdmin }: { isAdmin: boolean }) {
       {/* Mobile toggle */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="fixed top-4 left-4 z-40 md:hidden text-[#8888a0] hover:text-[#d4d4dc]"
-        title={isMobileOpen ? "Close menu" : "Open menu"}
+        className="fixed top-6 left-6 z-40 md:hidden text-muted hover:text-foreground cursor-pointer"
+        aria-label={isMobileOpen ? "Close menu" : "Open menu"}
       >
-        {isMobileOpen ? <ChevronLeft size={20} /> : <Menu size={20} />}
+        {isMobileOpen ? <ChevronLeft size={20} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.5} />}
       </button>
 
       <aside
         className={`
           ${isMobileOpen ? "w-full translate-x-0" : "w-0 -translate-x-full"}
-          ${isCollapsed ? "md:w-16" : "md:w-72"}
+          ${isCollapsed ? "md:w-20" : "md:w-72"}
           md:translate-x-0
-          bg-[#1a1a2e] border-r border-[#2e2e4a] flex flex-col
-          transition-all duration-300 ease-in-out overflow-hidden
+          bg-surface border-r border-border flex flex-col
+          transition-all duration-300 ease-out overflow-hidden
           relative z-20 shrink-0 h-screen
         `}
       >
         {/* Header */}
         <div
-          className={`${isCollapsed ? "px-3 py-3" : "px-6 py-3"} border-b border-[#2e2e4a] flex items-center justify-between`}
+          className={`${isCollapsed ? "px-4 py-6" : "px-8 py-6"} border-b border-border flex items-center justify-between`}
         >
           <Link
             href="/"
-            className={`flex items-center text-[#d4d4dc] font-bold tracking-widest text-lg ${isCollapsed ? "justify-center w-full" : "space-x-2"}`}
+            className={`flex items-center text-foreground font-semibold tracking-tight text-xl ${isCollapsed ? "justify-center w-full" : "space-x-3"}`}
+            style={{ fontFamily: 'Archivo, sans-serif' }}
           >
-            <Server size={20} className="shrink-0" />
             {!isCollapsed && <span className="whitespace-nowrap">{t("sidebar.title")}</span>}
+            {isCollapsed && <span className="text-2xl">G</span>}
           </Link>
           {!isCollapsed && (
             <button
               onClick={() => setIsCollapsed(true)}
-              className="text-[#5a5a72] hover:text-[#d4d4dc] hidden md:block"
+              className="text-muted hover:text-foreground hidden md:block cursor-pointer"
+              aria-label="Collapse sidebar"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={18} strokeWidth={1.5} />
             </button>
           )}
           <button
             onClick={() => setIsMobileOpen(false)}
-            className="text-[#5a5a72] hover:text-[#d4d4dc] md:hidden"
+            className="text-muted hover:text-foreground md:hidden cursor-pointer"
+            aria-label="Close menu"
           >
-            <X size={20} />
+            <X size={20} strokeWidth={1.5} />
           </button>
         </div>
 
-        {/* System Status */}
-        <div className={`${isCollapsed ? "px-2 py-4" : "p-6"} flex-1 overflow-y-auto`}>
+        {/* Navigation */}
+        <div className={`${isCollapsed ? "px-3 py-8" : "px-6 py-8"} flex-1 overflow-y-auto`}>
           {isCollapsed && (
             <button
               onClick={() => setIsCollapsed(false)}
-              className="w-full hidden md:flex items-center justify-center mb-4 text-[#5a5a72] hover:text-[#d4d4dc] transition-colors"
+              className="w-full hidden md:flex items-center justify-center mb-6 text-muted hover:text-foreground transition-colors cursor-pointer"
+              aria-label="Expand sidebar"
             >
-              <Menu size={16} />
+              <Menu size={18} strokeWidth={1.5} />
             </button>
           )}
 
-          <div className="mb-8">
-            {!isCollapsed && (
-              <p className="text-xs text-[#5a5a72] font-mono mb-2">
-                {t("sidebar.session")}
-              </p>
-            )}
-            <div
-              className={`flex items-center text-[#d4a054] text-xs font-mono ${isCollapsed ? "justify-center" : ""}`}
-            >
-              <span className="w-2 h-2 bg-[#d4a054] rounded-full animate-pulse shrink-0" />
-              {!isCollapsed && <span className="ml-2">{t("sidebar.online")}</span>}
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="space-y-2">
+          <nav className="space-y-1">
             {navItems.map((item) => {
               const active = pathname === item.href;
               const label = t(item.labelKey);
@@ -119,18 +107,16 @@ export default function Sidebar({ isAdmin }: { isAdmin: boolean }) {
                   key={item.href}
                   href={item.href}
                   title={isCollapsed ? label : undefined}
-                  className={`w-full flex items-center ${isCollapsed ? "justify-center px-2" : "px-4"} py-3 text-sm font-medium transition-all duration-200 border-l-2 rounded-r-lg group ${
+                  className={`w-full flex items-center ${isCollapsed ? "justify-center px-3" : "px-4"} py-3 text-sm font-medium transition-all duration-200 rounded cursor-pointer ${
                     active
-                      ? "bg-[#d4a054]/10 text-[#d4d4dc] border-[#d4a054]"
-                      : "text-[#8888a0] hover:text-[#d4d4dc] hover:bg-white/5 border-transparent hover:border-[#5a5a72]"
+                      ? "bg-foreground text-background"
+                      : "text-muted hover:text-foreground hover:bg-hover"
                   }`}
                 >
                   <span
-                    className={`${isCollapsed ? "" : "mr-3"} transition-transform duration-300 shrink-0 ${
-                      active ? "scale-110" : "group-hover:scale-110"
-                    }`}
+                    className={`${isCollapsed ? "" : "mr-3"} shrink-0`}
                   >
-                    <item.icon size={18} />
+                    <item.icon size={18} strokeWidth={1.5} />
                   </span>
                   {!isCollapsed && <span className="whitespace-nowrap">{label}</span>}
                 </Link>
@@ -139,29 +125,29 @@ export default function Sidebar({ isAdmin }: { isAdmin: boolean }) {
           </nav>
 
           {isAdmin && (
-            <div className="mt-8 pt-8 border-t border-[#2e2e4a] space-y-3">
+            <div className={`${isCollapsed ? "mt-8 pt-8" : "mt-12 pt-8"} border-t border-border space-y-1`}>
               <Link
                 href="/write"
                 title={isCollapsed ? t("sidebar.admin") : undefined}
-                className={`flex items-center ${isCollapsed ? "justify-center" : ""} text-xs transition-colors ${
+                className={`flex items-center ${isCollapsed ? "justify-center px-3" : "px-4"} py-3 text-sm font-medium transition-colors rounded cursor-pointer ${
                   pathname === "/write"
-                    ? "text-[#d4d4dc]"
-                    : "text-[#5a5a72] hover:text-[#8888a0]"
+                    ? "text-accent"
+                    : "text-muted hover:text-foreground hover:bg-hover"
                 }`}
               >
-                <Save size={12} className={`shrink-0 ${isCollapsed ? "" : "mr-2"}`} />
+                <Save size={16} strokeWidth={1.5} className={`shrink-0 ${isCollapsed ? "" : "mr-3"}`} />
                 {!isCollapsed && <span className="whitespace-nowrap">{t("sidebar.admin")}</span>}
               </Link>
               <Link
                 href="/admin"
                 title={isCollapsed ? t("sidebar.adminDashboard") : undefined}
-                className={`flex items-center ${isCollapsed ? "justify-center" : ""} text-xs transition-colors ${
+                className={`flex items-center ${isCollapsed ? "justify-center px-3" : "px-4"} py-3 text-sm font-medium transition-colors rounded cursor-pointer ${
                   pathname === "/admin"
-                    ? "text-[#d4d4dc]"
-                    : "text-[#5a5a72] hover:text-[#8888a0]"
+                    ? "text-accent"
+                    : "text-muted hover:text-foreground hover:bg-hover"
                 }`}
               >
-                <Settings size={12} className={`shrink-0 ${isCollapsed ? "" : "mr-2"}`} />
+                <Settings size={16} strokeWidth={1.5} className={`shrink-0 ${isCollapsed ? "" : "mr-3"}`} />
                 {!isCollapsed && <span className="whitespace-nowrap">{t("sidebar.adminDashboard")}</span>}
               </Link>
             </div>
@@ -170,17 +156,17 @@ export default function Sidebar({ isAdmin }: { isAdmin: boolean }) {
 
         {/* Social Footer */}
         <div
-          className={`${isCollapsed ? "px-2 py-4" : "p-6"} border-t border-[#2e2e4a] bg-[#1a1a2e]`}
+          className={`${isCollapsed ? "px-3 py-6" : "px-6 py-6"} border-t border-border bg-surface`}
         >
           {!isCollapsed && (
-            <p className="text-[10px] text-[#5a5a72] mb-3 font-mono uppercase tracking-widest">
+            <p className="text-xs text-muted mb-4 font-medium uppercase tracking-wider">
               {t("sidebar.connect")}
             </p>
           )}
           <div className={`flex ${isCollapsed ? "flex-col items-center" : ""} gap-2`}>
-            <SocialButton icon={<Github size={18} />} href="https://github.com/GatsLee" label="GitHub" />
-            <SocialButton icon={<Linkedin size={18} />} href="https://www.linkedin.com/in/joon-yeol-lee-567421281/" label="LinkedIn" />
-            <SocialButton icon={<Mail size={18} />} href="mailto:naanthonylee@gmail.com" label="Email" />
+            <SocialButton icon={<Github size={18} strokeWidth={1.5} />} href="https://github.com/GatsLee" label="GitHub" />
+            <SocialButton icon={<Linkedin size={18} strokeWidth={1.5} />} href="https://www.linkedin.com/in/joon-yeol-lee-567421281/" label="LinkedIn" />
+            <SocialButton icon={<Mail size={18} strokeWidth={1.5} />} href="mailto:naanthonylee@gmail.com" label="Email" />
           </div>
         </div>
       </aside>
@@ -194,7 +180,7 @@ function SocialButton({ icon, href, label }: { icon: React.ReactNode; href: stri
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#2e2e4a] text-[#8888a0] hover:text-[#d4a054] hover:border-[#d4a054] hover:bg-[#d4a054]/10 transition-all duration-200"
+      className="flex items-center justify-center w-10 h-10 rounded border border-border text-muted hover:text-accent hover:border-accent hover:bg-hover transition-all duration-200 cursor-pointer"
       title={label}
     >
       {icon}

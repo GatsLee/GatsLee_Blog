@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { MessageSquare, User } from "lucide-react";
 
 interface GuestEntry {
   id: number;
@@ -89,109 +90,137 @@ export default function GuestLogsPage() {
     }
   };
 
-  const promptUser = nameSet ? name : "guest";
-
   return (
-    <div className="max-w-4xl mx-auto h-full flex flex-col animate-fadeIn">
-      <div className="bg-[#22223a]/30 border border-[#2e2e4a] rounded-lg p-3 flex items-center justify-between mb-4">
-        <span className="text-xs text-[#8888a0] font-mono flex items-center">
-          <span className="w-2 h-2 bg-[#d4a054] rounded-full mr-2 animate-pulse" />
-          {promptUser}@gats-lab:~ {t("guest.interactive")}
-        </span>
-        {nameSet && (
-          <span className="text-[10px] text-[#5a5a72] font-mono">
-            {t("guest.namechange")}
-          </span>
-        )}
+    <div className="max-w-5xl mx-auto h-full flex flex-col animate-fadeIn">
+      {/* Header */}
+      <div className="mb-12">
+        <h1
+          className="text-3xl md:text-4xl font-semibold text-foreground mb-3 tracking-tight"
+          style={{ fontFamily: 'Archivo, sans-serif' }}
+        >
+          Guest Book
+        </h1>
+        <p className="text-muted text-sm">
+          {nameSet ? `Signed in as ${name}` : "Set your name to leave a message"} • Type "/name [newname]" to change your name
+        </p>
       </div>
 
-      <div
-        ref={scrollRef}
-        className="flex-1 bg-[#1a1a2e] border border-[#2e2e4a] rounded-lg p-6 font-mono text-sm overflow-y-auto min-h-[500px] flex flex-col"
-      >
-        <div className="space-y-4 mb-6 flex-1">
-          <div className="text-[#8888a0] mb-8 text-xs border-b border-[#2e2e4a] pb-4">
-            {t("guest.system")}
-            <br />
-            Last login: {new Date().toDateString()} from unknown IP
-            <br />
-            {t("guest.welcome")}
-            <br />
-            <span className="text-[#5a5a72]">
+      {/* Messages Container */}
+      <div className="flex-1 flex flex-col bg-surface border border-border rounded overflow-hidden">
+        {/* Messages */}
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6"
+        >
+          {/* Welcome Message */}
+          <div className="border-l-2 border-accent pl-6 py-4 bg-hover/50">
+            <p className="text-xs uppercase tracking-wider text-muted mb-2 font-medium">
+              Welcome
+            </p>
+            <p className="text-sm text-secondary leading-relaxed">
+              {t("guest.welcome")}
+            </p>
+            <p className="text-xs text-muted mt-2">
               {t("guest.ratelimit")}
-            </span>
+            </p>
           </div>
 
+          {/* Guest Entries */}
           {entries.map((entry) => (
             <div
               key={entry.id}
-              className="group mb-4 pl-2 border-l-2 border-transparent hover:border-[#3a3a52] transition-colors"
+              className="group border-l-2 border-transparent hover:border-accent pl-6 py-3 transition-all duration-200"
             >
-              <div className="flex flex-col sm:flex-row sm:items-baseline mb-1">
-                <span className="font-bold text-[#d4a054] mr-3 shrink-0 text-xs">
-                  [{entry.author}]:
-                </span>
-                <span className="text-[#b0b0bc] font-light">
-                  {entry.message}
-                </span>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-hover text-muted">
+                  <User size={16} strokeWidth={1.5} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-baseline gap-3">
+                    <span className="font-semibold text-foreground text-sm">
+                      {entry.author}
+                    </span>
+                    <time className="text-xs text-muted">
+                      {new Date(entry.createdAt).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </time>
+                  </div>
+                </div>
               </div>
-              <div className="text-[10px] text-[#5a5a72] hidden group-hover:block">
-                timestamp:{" "}
-                {new Date(entry.createdAt).toLocaleTimeString("en-US", {
-                  hour12: false,
-                })}
-              </div>
+              <p className="text-secondary leading-relaxed pl-10">
+                {entry.message}
+              </p>
             </div>
           ))}
+
+          {entries.length === 0 && (
+            <div className="text-center py-12 text-muted">
+              <MessageSquare size={48} strokeWidth={1} className="mx-auto mb-4 opacity-30" />
+              <p className="text-sm">No messages yet. Be the first to leave a note!</p>
+            </div>
+          )}
         </div>
 
-        {error && (
-          <div className="text-[#e05555] text-xs font-mono mb-2 px-2">
-            ERROR: {error}
-          </div>
-        )}
+        {/* Input Area */}
+        <div className="border-t border-border bg-background p-6">
+          {error && (
+            <div className="mb-4 px-4 py-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 rounded text-sm text-red-600 dark:text-red-400">
+              {error}
+            </div>
+          )}
 
-        {!nameSet ? (
-          <form
-            onSubmit={handleNameSubmit}
-            className="mt-4 border-t border-[#2e2e4a] pt-4 bg-[#1a1a2e] sticky bottom-0"
-          >
-            <div className="text-[#8888a0] text-xs mb-2">
-              {t("guest.nameprompt")}
-            </div>
-            <div className="flex items-center">
-              <span className="text-[#d4a054] font-bold mr-3 whitespace-nowrap">
-                set_name:
-              </span>
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                maxLength={20}
-                className="flex-1 bg-transparent border-none outline-none text-[#d4d4dc] placeholder-[#3a3a52] focus:ring-0 font-light caret-[#d4a054]"
-                placeholder="your_name"
-                autoFocus
-              />
-            </div>
-          </form>
-        ) : (
-          <form
-            onSubmit={handleMessageSubmit}
-            className="flex items-center mt-4 border-t border-[#2e2e4a] pt-4 bg-[#1a1a2e] sticky bottom-0"
-          >
-            <span className="text-[#d4a054] font-bold mr-3 whitespace-nowrap animate-pulse">
-              {name}@gats-lab:~$
-            </span>
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              className="flex-1 bg-transparent border-none outline-none text-[#d4d4dc] placeholder-[#3a3a52] focus:ring-0 font-light caret-[#d4a054]"
-              placeholder="echo 'Hello World'"
-              autoFocus
-            />
-          </form>
-        )}
+          {!nameSet ? (
+            <form onSubmit={handleNameSubmit} className="space-y-3">
+              <label className="text-sm font-medium text-foreground">
+                {t("guest.nameprompt")}
+              </label>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  maxLength={20}
+                  className="flex-1 px-4 py-3 bg-surface border border-border rounded text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                  placeholder="Your name"
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-foreground text-background font-medium rounded hover:bg-primary transition-all cursor-pointer"
+                >
+                  Set Name
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleMessageSubmit} className="space-y-3">
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <User size={16} strokeWidth={1.5} />
+                {name}
+              </label>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  className="flex-1 px-4 py-3 bg-surface border border-border rounded text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                  placeholder="Leave a message..."
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-accent text-white font-medium rounded hover:bg-accent/90 transition-all cursor-pointer"
+                >
+                  Send
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

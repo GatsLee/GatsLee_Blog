@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { TrendingUp, Calendar } from "lucide-react";
+import { TrendingUp, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import Link from "next/link";
 
@@ -14,9 +14,12 @@ interface ProgressPost {
   published: boolean;
 }
 
+const POSTS_PER_PAGE = 10;
+
 export default function ProgressPage() {
   const [posts, setPosts] = useState<ProgressPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -38,89 +41,139 @@ export default function ProgressPage() {
       : plainText;
   };
 
+  // Pagination
+  const totalPages = Math.ceil(posts.length / POSTS_PER_PAGE);
+  const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
+  const endIndex = startIndex + POSTS_PER_PAGE;
+  const currentPosts = posts.slice(startIndex, endIndex);
+
   return (
     <div className="max-w-4xl mx-auto animate-fadeIn">
       <div className="flex items-center justify-between mb-12">
-        <h2 className="text-xl text-[#d4d4dc] font-bold flex items-center tracking-tight">
-          <TrendingUp className="mr-2" size={20} /> Build Progress Timeline
+        <h2 className="text-2xl md:text-3xl text-foreground font-semibold flex items-center tracking-tight" style={{ fontFamily: 'Archivo, sans-serif' }}>
+          <TrendingUp className="mr-3 text-accent" size={24} strokeWidth={1.5} />
+          Build Progress Timeline
         </h2>
-        <span className="text-xs font-mono text-[#8888a0]">
-          Development Journey
+        <span className="text-xs text-muted">
+          {posts.length} {posts.length === 1 ? 'Entry' : 'Entries'}
         </span>
       </div>
 
       {loading ? (
-        <div className="text-[#8888a0] font-mono text-sm animate-pulse p-8 text-center">
+        <div className="text-muted text-sm animate-pulse p-8 text-center">
           Loading progress...
         </div>
       ) : posts.length === 0 ? (
-        <div className="bg-[#22223a] border border-[#2e2e4a] rounded-lg p-12 text-center">
-          <p className="text-[#5a5a72] font-mono text-sm">
+        <div className="bg-surface border border-border rounded-lg p-12 text-center">
+          <p className="text-muted text-sm">
             No progress entries yet. Start documenting your journey!
           </p>
         </div>
       ) : (
-        <div className="relative">
-          {/* Vertical Timeline Line */}
-          <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-[#2e2e4a]" />
+        <>
+          <div className="relative">
+            {/* Vertical Timeline Line */}
+            <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-border" />
 
-          {/* Timeline Items */}
-          <div className="space-y-8">
-            {posts.map((post, index) => (
-              <div key={post.id} className="relative flex items-start gap-6">
-                {/* Timeline Dot */}
+            {/* Timeline Items */}
+            <div className="space-y-8">
+              {currentPosts.map((post, index) => (
+                <div key={post.id} className="relative flex items-start gap-6">
+                  {/* Timeline Dot */}
+                  <div className="relative z-10 flex-shrink-0">
+                    <div className="w-16 h-16 rounded-full bg-surface border-4 border-accent flex items-center justify-center transition-colors">
+                      <div className="w-3 h-3 rounded-full bg-accent animate-pulse" />
+                    </div>
+                  </div>
+
+                  {/* Content Card */}
+                  <Link
+                    href={`/devlogs/${post.slug}`}
+                    className="flex-1 bg-surface border border-border rounded-lg p-6 hover:border-accent transition-all duration-300 hover:shadow-lg hover:shadow-accent/10 group cursor-pointer"
+                  >
+                    {/* Date */}
+                    <div className="flex items-center gap-2 text-xs text-muted mb-3">
+                      <Calendar size={12} strokeWidth={1.5} />
+                      <span>{new Date(post.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}</span>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="text-lg font-semibold text-foreground mb-3 group-hover:text-accent transition-colors tracking-tight" style={{ fontFamily: 'Archivo, sans-serif' }}>
+                      {post.title}
+                    </h3>
+
+                    {/* Summary */}
+                    <p className="text-sm text-secondary leading-relaxed line-clamp-3">
+                      {getSummary(post.content)}
+                    </p>
+
+                    {/* Read More Link */}
+                    <div className="mt-4 text-xs text-accent group-hover:underline">
+                      Read full update →
+                    </div>
+                  </Link>
+                </div>
+              ))}
+            </div>
+
+            {/* Timeline End Indicator - Only show on last page */}
+            {currentPage === totalPages && (
+              <div className="relative flex items-center gap-6 mt-8">
                 <div className="relative z-10 flex-shrink-0">
-                  <div className="w-16 h-16 rounded-full bg-[#22223a] border-4 border-[#d4a054] flex items-center justify-center">
-                    <div className="w-3 h-3 rounded-full bg-[#d4a054] animate-pulse" />
+                  <div className="w-16 h-16 rounded-full bg-surface border-4 border-border-strong flex items-center justify-center">
+                    <div className="w-3 h-3 rounded-full bg-muted" />
                   </div>
                 </div>
-
-                {/* Content Card */}
-                <Link
-                  href={`/devlogs/${post.slug}`}
-                  className="flex-1 bg-[#22223a] border border-[#2e2e4a] rounded-lg p-6 hover:border-[#d4a054] transition-all duration-300 hover:shadow-lg hover:shadow-[#d4a054]/10 group"
-                >
-                  {/* Date */}
-                  <div className="flex items-center gap-2 text-xs text-[#8888a0] font-mono mb-3">
-                    <Calendar size={12} />
-                    <span>{new Date(post.createdAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })}</span>
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="text-lg font-bold text-[#d4d4dc] mb-3 group-hover:text-[#d4a054] transition-colors">
-                    {post.title}
-                  </h3>
-
-                  {/* Summary */}
-                  <p className="text-sm text-[#b0b0bc] leading-relaxed line-clamp-3">
-                    {getSummary(post.content)}
-                  </p>
-
-                  {/* Read More Link */}
-                  <div className="mt-4 text-xs text-[#d4a054] font-mono group-hover:underline">
-                    Read full update →
-                  </div>
-                </Link>
+                <div className="flex-1 text-xs text-muted">
+                  Journey continues...
+                </div>
               </div>
-            ))}
+            )}
           </div>
 
-          {/* Timeline End Indicator */}
-          <div className="relative flex items-center gap-6 mt-8">
-            <div className="relative z-10 flex-shrink-0">
-              <div className="w-16 h-16 rounded-full bg-[#22223a] border-4 border-[#5a5a72] flex items-center justify-center">
-                <div className="w-3 h-3 rounded-full bg-[#5a5a72]" />
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-4 mt-12 pt-8 border-t border-border">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-surface border border-border rounded-lg hover:border-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <ChevronLeft size={16} strokeWidth={1.5} />
+                Previous
+              </button>
+
+              <div className="flex items-center gap-2">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-10 h-10 text-sm font-medium rounded-lg transition-all cursor-pointer ${
+                      currentPage === page
+                        ? 'bg-accent text-white'
+                        : 'bg-surface text-foreground border border-border hover:border-accent'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
               </div>
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-surface border border-border rounded-lg hover:border-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Next
+                <ChevronRight size={16} strokeWidth={1.5} />
+              </button>
             </div>
-            <div className="flex-1 text-xs text-[#5a5a72] font-mono">
-              Journey continues...
-            </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
