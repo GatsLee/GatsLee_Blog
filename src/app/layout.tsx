@@ -5,9 +5,9 @@ import ClientLayout from "@/components/layout/ClientLayout";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Gats Lab - Home Server Devlog",
+  title: "Gats Lab",
   description:
-    "홈서버 구축과 AI 에이전트 개발 기록. Building autonomous 24/7 AI workforce.",
+    "Building Life OS to help people manage their lives more efficiently and effectively. We are a team of passionate developers, designers, and entrepreneurs who are dedicated to creating innovative solutions that make a difference in people's lives.",
 };
 
 export default async function RootLayout({

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Globe, Sun, Moon } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useTheme } from "@/context/ThemeContext";
+import TypingObjective from "./TypingObjective";
 
 export default function Header() {
   const [mounted, setMounted] = useState(false);
@@ -17,10 +18,26 @@ export default function Header() {
 
   return (
     <header className="h-20 border-b border-border bg-background flex items-center justify-between px-6 md:px-12 shrink-0 z-20 transition-colors duration-300">
-      <div className="flex items-center min-w-0 flex-1">
-        <h1 className="text-sm md:text-base text-foreground font-medium tracking-tight">
-          {t("header.objective")}
-        </h1>
+      <div className="flex items-center min-w-0 flex-1 pl-12 md:pl-0">
+        {/* Desktop version - full text */}
+        <div className="hidden sm:flex items-baseline gap-2">
+          <h2 className="text-lg md:text-xl text-foreground font-semibold tracking-tight whitespace-nowrap">
+            {t("header.objectiveLabel")}:
+          </h2>
+          <div className="text-sm md:text-base text-foreground font-medium tracking-tight">
+            <TypingObjective text={t("header.objective")} />
+          </div>
+        </div>
+
+        {/* Mobile version - shortened */}
+        <div className="flex sm:hidden items-baseline gap-2">
+          <h2 className="text-base text-foreground font-semibold tracking-tight whitespace-nowrap">
+            {t("header.objectiveLabel")}:
+          </h2>
+          <div className="text-sm text-foreground font-medium tracking-tight">
+            <TypingObjective text={t("header.objectiveMobile")} />
+          </div>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">

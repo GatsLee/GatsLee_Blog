@@ -16,6 +16,20 @@ interface HomeContentProps {
   aiMetrics: MetricItem[];
 }
 
+// Helper function to render text with bold markdown
+function renderWithBold(text: string) {
+  const parts = text.split(/\*\*(.*?)\*\*/g);
+  return parts.map((part, index) =>
+    index % 2 === 1 ? (
+      <strong key={index} className="text-accent font-semibold">
+        {part}
+      </strong>
+    ) : (
+      part
+    )
+  );
+}
+
 export default function HomeContent({ homeServerMetrics, aiMetrics }: HomeContentProps) {
   const { t } = useLanguage();
 
@@ -32,7 +46,7 @@ export default function HomeContent({ homeServerMetrics, aiMetrics }: HomeConten
             {t("home.readme")}
           </p>
           <p className="text-foreground leading-relaxed text-sm">
-            {t("home.intro")}{" "}
+            {renderWithBold(t("home.intro"))}{" "}
             <Link
               href="/guestlogs"
               className="text-accent hover:underline font-medium"

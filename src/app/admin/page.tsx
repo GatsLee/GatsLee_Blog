@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Settings, Trash2, Pencil, X, Check } from "lucide-react";
+import { Settings, Trash2, Pencil, X, Check, FileText, MessageSquare, Users } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 type Tab = "posts" | "comments" | "guestbook";
@@ -124,24 +124,40 @@ export default function AdminPage() {
 
   const tabs: Tab[] = ["posts", "comments", "guestbook"];
 
+  const getTabIcon = (tab: Tab) => {
+    switch (tab) {
+      case "posts": return <FileText size={16} />;
+      case "comments": return <MessageSquare size={16} />;
+      case "guestbook": return <Users size={16} />;
+    }
+  };
+
   return (
-    <div className="max-w-6xl mx-auto animate-fadeIn">
-      <h2 className="text-xl text-[#d4d4dc] mb-8 font-bold flex items-center tracking-tight">
-        <Settings className="mr-2" size={20} /> {t("admin.title")}
-      </h2>
+    <div className="max-w-7xl mx-auto animate-fadeIn">
+      {/* Header */}
+      <div className="mb-8 pb-6 border-b border-border">
+        <h1 className="text-3xl text-foreground font-bold flex items-center tracking-tight mb-2">
+          <Settings className="mr-3" size={28} strokeWidth={1.5} />
+          {t("admin.title")}
+        </h1>
+        <p className="text-sm text-muted ml-11">
+          Manage your posts, comments, and guestbook entries
+        </p>
+      </div>
 
       {/* Tab Bar */}
-      <div className="flex space-x-1 mb-6 border-b border-[#2e2e4a]">
+      <div className="flex space-x-2 mb-8">
         {tabs.map((tab) => (
           <button
             key={tab}
             onClick={() => { setActiveTab(tab); setEditingId(null); }}
-            className={`px-4 py-2 text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer ${
+            className={`px-6 py-3 text-sm font-medium transition-all rounded-lg cursor-pointer flex items-center gap-2 ${
               activeTab === tab
-                ? "text-[#d4a054] border-b-2 border-[#d4a054]"
-                : "text-[#5a5a72] hover:text-[#8888a0]"
+                ? "bg-accent text-background shadow-lg shadow-accent/20"
+                : "bg-surface text-muted border border-border hover:border-accent hover:text-accent"
             }`}
           >
+            {getTabIcon(tab)}
             {t(`admin.tab.${tab}` as keyof typeof import("@/lib/i18n").translations)}
           </button>
         ))}
@@ -151,128 +167,101 @@ export default function AdminPage() {
       {activeTab === "posts" && (
         <>
           {/* Category Filter Buttons */}
-          <div className="flex gap-2 mb-4">
-            <button
-              onClick={() => setPostCategoryFilter("all")}
-              className={`px-4 py-2 text-xs font-mono uppercase tracking-wider transition-colors rounded ${
-                postCategoryFilter === "all"
-                  ? "bg-[#d4a054] text-[#1a1a2e] font-bold"
-                  : "bg-[#22223a] text-[#8888a0] border border-[#2e2e4a] hover:border-[#d4a054] hover:text-[#d4a054]"
-              }`}
-            >
-              All Posts
-            </button>
-            <button
-              onClick={() => setPostCategoryFilter("devlog")}
-              className={`px-4 py-2 text-xs font-mono uppercase tracking-wider transition-colors rounded ${
-                postCategoryFilter === "devlog"
-                  ? "bg-[#d4a054] text-[#1a1a2e] font-bold"
-                  : "bg-[#22223a] text-[#8888a0] border border-[#2e2e4a] hover:border-[#d4a054] hover:text-[#d4a054]"
-              }`}
-            >
-              Development Logs
-            </button>
-            <button
-              onClick={() => setPostCategoryFilter("troubleshooting")}
-              className={`px-4 py-2 text-xs font-mono uppercase tracking-wider transition-colors rounded ${
-                postCategoryFilter === "troubleshooting"
-                  ? "bg-[#d4a054] text-[#1a1a2e] font-bold"
-                  : "bg-[#22223a] text-[#8888a0] border border-[#2e2e4a] hover:border-[#d4a054] hover:text-[#d4a054]"
-              }`}
-            >
-              Troubleshooting
-            </button>
-            <button
-              onClick={() => setPostCategoryFilter("progress")}
-              className={`px-4 py-2 text-xs font-mono uppercase tracking-wider transition-colors rounded ${
-                postCategoryFilter === "progress"
-                  ? "bg-[#d4a054] text-[#1a1a2e] font-bold"
-                  : "bg-[#22223a] text-[#8888a0] border border-[#2e2e4a] hover:border-[#d4a054] hover:text-[#d4a054]"
-              }`}
-            >
-              Build Progress
-            </button>
+          <div className="flex gap-3 mb-6">
+            {["all", "devlog", "troubleshooting", "progress"].map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setPostCategoryFilter(filter)}
+                className={`px-5 py-2.5 text-xs font-medium uppercase tracking-wider transition-all rounded-lg ${
+                  postCategoryFilter === filter
+                    ? "bg-accent text-background shadow-md"
+                    : "bg-background text-muted border border-border hover:border-accent hover:text-accent"
+                }`}
+              >
+                {filter === "all" ? "All Posts" : filter.charAt(0).toUpperCase() + filter.slice(1)}
+              </button>
+            ))}
           </div>
 
-          <div className="bg-[#22223a] border border-[#2e2e4a] rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[#2e2e4a] text-[#8888a0] text-xs font-mono uppercase">
-                <th className="text-left p-4">{t("admin.posts.title")}</th>
-                <th className="text-left p-4 hidden md:table-cell">{t("admin.posts.category")}</th>
-                <th className="text-left p-4">{t("admin.posts.status")}</th>
-                <th className="text-left p-4 hidden md:table-cell">{t("admin.posts.date")}</th>
-                <th className="text-right p-4">{t("admin.posts.actions")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {posts
-                .filter((post) => postCategoryFilter === "all" || post.category === postCategoryFilter)
-                .map((post) => (
-                <tr key={post.id} className="border-b border-[#2e2e4a]/50 hover:bg-[#1a1a2e] transition-colors">
-                  <td className="p-4">
-                    <span className="text-[#d4d4dc] font-medium">{post.title}</span>
-                    <span className="text-[#5a5a72] text-xs ml-2">({post._count.comments})</span>
-                  </td>
-                  <td className="p-4 hidden md:table-cell">
-                    <span className="text-[#8888a0] text-xs font-mono">{post.category}</span>
-                  </td>
-                  <td className="p-4">
-                    <button
-                      onClick={() => handleTogglePublish(post)}
-                      className={`text-xs font-mono px-2 py-1 rounded cursor-pointer ${
-                        post.published
-                          ? "bg-[#d4a054]/20 text-[#d4a054]"
-                          : "bg-[#e05555]/20 text-[#e05555]"
-                      }`}
-                    >
-                      {post.published ? t("admin.posts.published") : t("admin.posts.draft")}
-                    </button>
-                  </td>
-                  <td className="p-4 hidden md:table-cell text-[#5a5a72] text-xs font-mono">
-                    {new Date(post.createdAt).toISOString().split("T")[0]}
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Link
-                        href={`/write/edit/${post.id}`}
-                        className="text-[#8888a0] hover:text-[#d4a054] transition-colors"
-                        title={t("admin.action.edit")}
-                      >
-                        <Pencil size={14} />
-                      </Link>
-                      <button
-                        onClick={() => handleDelete("posts", post.id)}
-                        className="text-[#8888a0] hover:text-[#e05555] transition-colors cursor-pointer"
-                        title={t("admin.action.delete")}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
+          <div className="bg-background border border-border rounded-xl overflow-hidden shadow-lg">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-muted text-xs font-mono uppercase bg-background">
+                  <th className="text-left p-4">{t("admin.posts.title")}</th>
+                  <th className="text-left p-4 hidden md:table-cell">{t("admin.posts.category")}</th>
+                  <th className="text-left p-4">{t("admin.posts.status")}</th>
+                  <th className="text-left p-4 hidden md:table-cell">{t("admin.posts.date")}</th>
+                  <th className="text-right p-4">{t("admin.posts.actions")}</th>
                 </tr>
-              ))}
-              {posts
-                .filter((post) => postCategoryFilter === "all" || post.category === postCategoryFilter)
-                .length === 0 && (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-[#5a5a72] font-mono text-sm">
-                    {postCategoryFilter === "all" ? t("admin.empty") : `No ${postCategoryFilter} posts found.`}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {posts
+                  .filter((post) => postCategoryFilter === "all" || post.category === postCategoryFilter)
+                  .map((post) => (
+                    <tr key={post.id} className="border-b border-border/50 hover:bg-surface transition-colors">
+                      <td className="p-4">
+                        <span className="text-foreground font-medium">{post.title}</span>
+                        <span className="text-secondary text-xs ml-2">({post._count.comments})</span>
+                      </td>
+                      <td className="p-4 hidden md:table-cell">
+                        <span className="text-muted text-xs font-mono bg-surface px-2 py-1 rounded">{post.category}</span>
+                      </td>
+                      <td className="p-4">
+                        <button
+                          onClick={() => handleTogglePublish(post)}
+                          className={`text-xs font-mono px-3 py-1.5 rounded cursor-pointer transition-all ${
+                            post.published
+                              ? "bg-accent/20 text-accent border border-accent/30"
+                              : "bg-red-500/20 text-red-500 border border-red-500/30"
+                          }`}
+                        >
+                          {post.published ? t("admin.posts.published") : t("admin.posts.draft")}
+                        </button>
+                      </td>
+                      <td className="p-4 hidden md:table-cell text-secondary text-xs font-mono">
+                        {new Date(post.createdAt).toISOString().split("T")[0]}
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/write/edit/${post.id}`}
+                            className="text-muted hover:text-accent transition-colors p-2 hover:bg-surface rounded"
+                            title={t("admin.action.edit")}
+                          >
+                            <Pencil size={14} />
+                          </Link>
+                          <button
+                            onClick={() => handleDelete("posts", post.id)}
+                            className="text-muted hover:text-red-500 transition-colors cursor-pointer p-2 hover:bg-surface rounded"
+                            title={t("admin.action.delete")}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                {posts
+                  .filter((post) => postCategoryFilter === "all" || post.category === postCategoryFilter)
+                  .length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="p-12 text-center text-secondary font-mono text-sm">
+                        {postCategoryFilter === "all" ? t("admin.empty") : `No ${postCategoryFilter} posts found.`}
+                      </td>
+                    </tr>
+                  )}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
 
-      {/* Comments Tab */}
+      {/* Comments Tab - Similar updates */}
       {activeTab === "comments" && (
-        <div className="bg-[#22223a] border border-[#2e2e4a] rounded-lg overflow-hidden">
+        <div className="bg-background border border-border rounded-xl overflow-hidden shadow-lg">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2e2e4a] text-[#8888a0] text-xs font-mono uppercase">
+              <tr className="border-b border-border text-muted text-xs font-mono uppercase bg-background">
                 <th className="text-left p-4">{t("admin.comments.author")}</th>
                 <th className="text-left p-4">{t("admin.comments.content")}</th>
                 <th className="text-left p-4 hidden md:table-cell">{t("admin.comments.post")}</th>
@@ -281,9 +270,9 @@ export default function AdminPage() {
             </thead>
             <tbody>
               {comments.map((comment) => (
-                <tr key={comment.id} className="border-b border-[#2e2e4a]/50 hover:bg-[#1a1a2e] transition-colors">
+                <tr key={comment.id} className="border-b border-border/50 hover:bg-surface transition-colors">
                   <td className="p-4">
-                    <span className="text-[#d4a054] text-xs font-mono">{comment.author}</span>
+                    <span className="text-accent text-xs font-mono bg-accent/10 px-2 py-1 rounded">{comment.author}</span>
                   </td>
                   <td className="p-4">
                     {editingId === comment.id ? (
@@ -291,15 +280,15 @@ export default function AdminPage() {
                         type="text"
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
-                        className="w-full bg-[#1a1a2e] border border-[#2e2e4a] rounded px-2 py-1 text-[#d4d4dc] text-sm focus:border-[#d4a054] focus:outline-none"
+                        className="w-full bg-background border border-border rounded px-3 py-2 text-foreground text-sm focus:border-accent focus:outline-none"
                         autoFocus
                       />
                     ) : (
-                      <span className="text-[#b0b0bc] text-sm">{comment.content.slice(0, 80)}{comment.content.length > 80 ? "..." : ""}</span>
+                      <span className="text-secondary text-sm">{comment.content.slice(0, 80)}{comment.content.length > 80 ? "..." : ""}</span>
                     )}
                   </td>
                   <td className="p-4 hidden md:table-cell">
-                    <span className="text-[#5a5a72] text-xs font-mono">{comment.post?.title?.slice(0, 30)}</span>
+                    <span className="text-secondary text-xs font-mono">{comment.post?.title?.slice(0, 30)}</span>
                   </td>
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -307,13 +296,13 @@ export default function AdminPage() {
                         <>
                           <button
                             onClick={() => handleSaveEdit("comments", comment.id)}
-                            className="text-[#d4a054] hover:text-[#c49544] transition-colors cursor-pointer"
+                            className="text-accent hover:text-accent/90 transition-colors cursor-pointer p-2 hover:bg-surface rounded"
                           >
                             <Check size={14} />
                           </button>
                           <button
                             onClick={() => { setEditingId(null); setEditValue(""); }}
-                            className="text-[#8888a0] hover:text-[#d4d4dc] transition-colors cursor-pointer"
+                            className="text-muted hover:text-foreground transition-colors cursor-pointer p-2 hover:bg-surface rounded"
                           >
                             <X size={14} />
                           </button>
@@ -322,14 +311,14 @@ export default function AdminPage() {
                         <>
                           <button
                             onClick={() => { setEditingId(comment.id); setEditValue(comment.content); }}
-                            className="text-[#8888a0] hover:text-[#d4a054] transition-colors cursor-pointer"
+                            className="text-muted hover:text-accent transition-colors cursor-pointer p-2 hover:bg-surface rounded"
                             title={t("admin.action.edit")}
                           >
                             <Pencil size={14} />
                           </button>
                           <button
                             onClick={() => handleDelete("comments", comment.id)}
-                            className="text-[#8888a0] hover:text-[#e05555] transition-colors cursor-pointer"
+                            className="text-muted hover:text-red-500 transition-colors cursor-pointer p-2 hover:bg-surface rounded"
                             title={t("admin.action.delete")}
                           >
                             <Trash2 size={14} />
@@ -342,7 +331,7 @@ export default function AdminPage() {
               ))}
               {comments.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="p-8 text-center text-[#5a5a72] font-mono text-sm">
+                  <td colSpan={4} className="p-12 text-center text-secondary font-mono text-sm">
                     {t("admin.empty")}
                   </td>
                 </tr>
@@ -352,12 +341,12 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Guestbook Tab */}
+      {/* Guestbook Tab - Similar updates */}
       {activeTab === "guestbook" && (
-        <div className="bg-[#22223a] border border-[#2e2e4a] rounded-lg overflow-hidden">
+        <div className="bg-background border border-border rounded-xl overflow-hidden shadow-lg">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-[#2e2e4a] text-[#8888a0] text-xs font-mono uppercase">
+              <tr className="border-b border-border text-muted text-xs font-mono uppercase bg-background">
                 <th className="text-left p-4">{t("admin.guestbook.author")}</th>
                 <th className="text-left p-4">{t("admin.guestbook.message")}</th>
                 <th className="text-left p-4 hidden md:table-cell">{t("admin.posts.date")}</th>
@@ -366,9 +355,9 @@ export default function AdminPage() {
             </thead>
             <tbody>
               {guestEntries.map((entry) => (
-                <tr key={entry.id} className="border-b border-[#2e2e4a]/50 hover:bg-[#1a1a2e] transition-colors">
+                <tr key={entry.id} className="border-b border-border/50 hover:bg-surface transition-colors">
                   <td className="p-4">
-                    <span className="text-[#d4a054] text-xs font-mono">{entry.author}</span>
+                    <span className="text-accent text-xs font-mono bg-accent/10 px-2 py-1 rounded">{entry.author}</span>
                   </td>
                   <td className="p-4">
                     {editingId === entry.id ? (
@@ -376,14 +365,14 @@ export default function AdminPage() {
                         type="text"
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
-                        className="w-full bg-[#1a1a2e] border border-[#2e2e4a] rounded px-2 py-1 text-[#d4d4dc] text-sm focus:border-[#d4a054] focus:outline-none"
+                        className="w-full bg-background border border-border rounded px-3 py-2 text-foreground text-sm focus:border-accent focus:outline-none"
                         autoFocus
                       />
                     ) : (
-                      <span className="text-[#b0b0bc] text-sm">{entry.message.slice(0, 80)}{entry.message.length > 80 ? "..." : ""}</span>
+                      <span className="text-secondary text-sm">{entry.message.slice(0, 80)}{entry.message.length > 80 ? "..." : ""}</span>
                     )}
                   </td>
-                  <td className="p-4 hidden md:table-cell text-[#5a5a72] text-xs font-mono">
+                  <td className="p-4 hidden md:table-cell text-secondary text-xs font-mono">
                     {new Date(entry.createdAt).toISOString().split("T")[0]}
                   </td>
                   <td className="p-4 text-right">
@@ -392,13 +381,13 @@ export default function AdminPage() {
                         <>
                           <button
                             onClick={() => handleSaveEdit("guestbook", entry.id)}
-                            className="text-[#d4a054] hover:text-[#c49544] transition-colors cursor-pointer"
+                            className="text-accent hover:text-accent/90 transition-colors cursor-pointer p-2 hover:bg-surface rounded"
                           >
                             <Check size={14} />
                           </button>
                           <button
                             onClick={() => { setEditingId(null); setEditValue(""); }}
-                            className="text-[#8888a0] hover:text-[#d4d4dc] transition-colors cursor-pointer"
+                            className="text-muted hover:text-foreground transition-colors cursor-pointer p-2 hover:bg-surface rounded"
                           >
                             <X size={14} />
                           </button>
@@ -407,14 +396,14 @@ export default function AdminPage() {
                         <>
                           <button
                             onClick={() => { setEditingId(entry.id); setEditValue(entry.message); }}
-                            className="text-[#8888a0] hover:text-[#d4a054] transition-colors cursor-pointer"
+                            className="text-muted hover:text-accent transition-colors cursor-pointer p-2 hover:bg-surface rounded"
                             title={t("admin.action.edit")}
                           >
                             <Pencil size={14} />
                           </button>
                           <button
                             onClick={() => handleDelete("guestbook", entry.id)}
-                            className="text-[#8888a0] hover:text-[#e05555] transition-colors cursor-pointer"
+                            className="text-muted hover:text-red-500 transition-colors cursor-pointer p-2 hover:bg-surface rounded"
                             title={t("admin.action.delete")}
                           >
                             <Trash2 size={14} />
@@ -427,7 +416,7 @@ export default function AdminPage() {
               ))}
               {guestEntries.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="p-8 text-center text-[#5a5a72] font-mono text-sm">
+                  <td colSpan={4} className="p-12 text-center text-secondary font-mono text-sm">
                     {t("admin.empty")}
                   </td>
                 </tr>

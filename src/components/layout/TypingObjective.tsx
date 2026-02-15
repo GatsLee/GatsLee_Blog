@@ -6,6 +6,20 @@ interface TypingObjectiveProps {
   text: string;
 }
 
+// Helper function to render text with bold markdown
+function renderWithBold(text: string) {
+  const parts = text.split(/\*\*(.*?)\*\*/g);
+  return parts.map((part, index) =>
+    index % 2 === 1 ? (
+      <strong key={index} className="text-accent font-semibold">
+        {part}
+      </strong>
+    ) : (
+      part
+    )
+  );
+}
+
 export default function TypingObjective({ text }: TypingObjectiveProps) {
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
@@ -36,7 +50,7 @@ export default function TypingObjective({ text }: TypingObjectiveProps) {
 
   return (
     <span>
-      {displayedText}
+      {renderWithBold(displayedText)}
       {isTyping && displayedText.length < text.length && (
         <span className="animate-blink">|</span>
       )}

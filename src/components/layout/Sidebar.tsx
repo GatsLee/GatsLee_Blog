@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/context/LanguageContext";
 import type { TranslationKey } from "@/lib/i18n";
@@ -65,8 +66,27 @@ export default function Sidebar({ isAdmin }: { isAdmin: boolean }) {
             className={`flex items-center text-foreground font-semibold tracking-tight text-xl ${isCollapsed ? "justify-center w-full" : "space-x-3"}`}
             style={{ fontFamily: 'Archivo, sans-serif' }}
           >
-            {!isCollapsed && <span className="whitespace-nowrap">{t("sidebar.title")}</span>}
-            {isCollapsed && <span className="text-2xl">G</span>}
+            {!isCollapsed && (
+              <>
+                <Image
+                  src="/favicon.png"
+                  alt="Pawn"
+                  width={28}
+                  height={28}
+                  className="object-contain"
+                />
+                <span className="whitespace-nowrap">{t("sidebar.title")}</span>
+              </>
+            )}
+            {isCollapsed && (
+              <Image
+                src="/favicon.png"
+                alt="Pawn"
+                width={32}
+                height={32}
+                className="object-contain"
+              />
+            )}
           </Link>
           {!isCollapsed && (
             <button
@@ -107,6 +127,11 @@ export default function Sidebar({ isAdmin }: { isAdmin: boolean }) {
                   key={item.href}
                   href={item.href}
                   title={isCollapsed ? label : undefined}
+                  onClick={() => {
+                    // Auto-minimize sidebar on menu click
+                    setIsMobileOpen(false); // Close on mobile
+                    setIsCollapsed(true); // Collapse on desktop
+                  }}
                   className={`w-full flex items-center ${isCollapsed ? "justify-center px-3" : "px-4"} py-3 text-sm font-medium transition-all duration-200 rounded cursor-pointer ${
                     active
                       ? "bg-foreground text-background"
@@ -129,6 +154,10 @@ export default function Sidebar({ isAdmin }: { isAdmin: boolean }) {
               <Link
                 href="/write"
                 title={isCollapsed ? t("sidebar.admin") : undefined}
+                onClick={() => {
+                  setIsMobileOpen(false);
+                  setIsCollapsed(true);
+                }}
                 className={`flex items-center ${isCollapsed ? "justify-center px-3" : "px-4"} py-3 text-sm font-medium transition-colors rounded cursor-pointer ${
                   pathname === "/write"
                     ? "text-accent"
@@ -141,6 +170,10 @@ export default function Sidebar({ isAdmin }: { isAdmin: boolean }) {
               <Link
                 href="/admin"
                 title={isCollapsed ? t("sidebar.adminDashboard") : undefined}
+                onClick={() => {
+                  setIsMobileOpen(false);
+                  setIsCollapsed(true);
+                }}
                 className={`flex items-center ${isCollapsed ? "justify-center px-3" : "px-4"} py-3 text-sm font-medium transition-colors rounded cursor-pointer ${
                   pathname === "/admin"
                     ? "text-accent"

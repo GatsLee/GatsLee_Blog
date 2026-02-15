@@ -73,7 +73,7 @@ export default function ProgressPage() {
         <>
           <div className="relative">
             {/* Vertical Timeline Line */}
-            <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-border" />
+            <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-border" />
 
             {/* Timeline Items */}
             <div className="space-y-8">
@@ -81,8 +81,18 @@ export default function ProgressPage() {
                 <div key={post.id} className="relative flex items-start gap-6">
                   {/* Timeline Dot */}
                   <div className="relative z-10 flex-shrink-0">
-                    <div className="w-16 h-16 rounded-full bg-surface border-4 border-accent flex items-center justify-center transition-colors">
-                      <div className="w-3 h-3 rounded-full bg-accent animate-pulse" />
+                    {/* Glow effect for the first (latest) post */}
+                    {index === 0 && (
+                      <div className="absolute inset-0 rounded-full bg-accent/30 blur-lg animate-pulse" />
+                    )}
+                    <div className={`relative w-10 h-10 rounded-full bg-surface flex items-center justify-center transition-all ${
+                      index === 0
+                        ? 'border-3 border-accent shadow-lg shadow-accent/50'
+                        : 'border-2 border-border'
+                    }`}>
+                      <div className={`w-2 h-2 rounded-full ${
+                        index === 0 ? 'bg-accent' : 'bg-muted'
+                      }`} />
                     </div>
                   </div>
 
@@ -91,10 +101,10 @@ export default function ProgressPage() {
                     href={`/devlogs/${post.slug}`}
                     className="flex-1 bg-surface border border-border rounded-lg p-6 hover:border-accent transition-all duration-300 hover:shadow-lg hover:shadow-accent/10 group cursor-pointer"
                   >
-                    {/* Date */}
-                    <div className="flex items-center gap-2 text-xs text-muted mb-3">
-                      <Calendar size={12} strokeWidth={1.5} />
-                      <span>{new Date(post.createdAt).toLocaleDateString('en-US', {
+                    {/* Date - Emphasized */}
+                    <div className="flex items-center gap-2 mb-4 bg-hover/50 rounded-md px-3 py-2 w-fit">
+                      <Calendar size={14} strokeWidth={1.5} className="text-accent" />
+                      <span className="text-sm font-semibold text-foreground">{new Date(post.createdAt).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric'
@@ -124,8 +134,8 @@ export default function ProgressPage() {
             {currentPage === totalPages && (
               <div className="relative flex items-center gap-6 mt-8">
                 <div className="relative z-10 flex-shrink-0">
-                  <div className="w-16 h-16 rounded-full bg-surface border-4 border-border-strong flex items-center justify-center">
-                    <div className="w-3 h-3 rounded-full bg-muted" />
+                  <div className="w-10 h-10 rounded-full bg-surface border-2 border-border flex items-center justify-center">
+                    <div className="w-2 h-2 rounded-full bg-muted" />
                   </div>
                 </div>
                 <div className="flex-1 text-xs text-muted">

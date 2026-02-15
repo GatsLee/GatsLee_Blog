@@ -12,15 +12,23 @@ export const translations = {
 
   // Header
   "header.objective": {
-    en: "current objective: make 24/7 AI workforce based on local LLMs.",
-    ko: "현재 목표: 로컬 LLM 기반 24/7 AI 워크포스 구축.",
+    en: "build **Life OS** to maximize my creativity and productivity.",
+    ko: "창의성과 생산성을 극대화하기 위한 **Life OS** 구축.",
+  },
+  "header.objectiveLabel": {
+    en: "Current Objective",
+    ko: "현재 목표",
+  },
+  "header.objectiveMobile": {
+    en: "**Life OS**",
+    ko: "**Life OS**",
   },
 
   // Home page
   "home.readme": { en: "// README", ko: "// 소개" },
   "home.intro": {
-    en: "Hi everyone. I'm Gats Lee, Home Labs Enthusiast and Solopreneur (wannabe). I am currently building my home server to automate repetitive work and research based on local LLMs. If there is any recommendation or advice to give, feel free to write it on",
-    ko: "안녕하세요. 홈랩 매니아이자 1인 기업가(지망생) Gats Lee입니다. 현재 로컬 LLM을 기반으로 반복 작업과 연구를 자동화하기 위해 홈서버를 구축하고 있습니다. 추천이나 조언이 있으시면",
+    en: "Hi everyone. I'm Gats Lee, **Home Labs Enthusiast** and **Solopreneur (wannabe)**. I am currently building my home server to automate repetitive work and research based on local LLMs. If there is any recommendation or advice to give, feel free to write it on",
+    ko: "안녕하세요. **홈랩 매니아**이자 **1인 기업가(지망생)** Gats Lee입니다. 현재 로컬 LLM을 기반으로 반복 작업과 연구를 자동화하기 위해 홈서버를 구축하고 있습니다. 추천이나 조언이 있으시면",
   },
   "home.intro.link": { en: "Guest Logs", ko: "방명록" },
   "home.intro.end": { en: ". Have fun!", ko: "에 남겨주세요. 즐겁게 둘러보세요!" },

@@ -72,58 +72,60 @@ export default function BuildProgressTimeline() {
         </div>
       ) : (
         <div className="relative">
-          {/* Vertical Timeline Line */}
-          <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border" />
-
-          {/* Timeline Items */}
-          <div className="space-y-6">
-            {posts.map((post) => (
-              <div key={post.id} className="relative flex items-start gap-4">
-                {/* Timeline Dot */}
-                <div className="relative z-10 flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-surface border-4 border-accent flex items-center justify-center transition-colors">
-                    <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-                  </div>
-                </div>
-
-                {/* Content Card */}
+          {/* Horizontal Timeline Container */}
+          <div className="flex items-center gap-4 overflow-x-auto pb-4">
+            {/* Timeline Items */}
+            {posts.map((post, index) => (
+              <div key={post.id} className="flex items-center flex-shrink-0">
+                {/* Progress Item */}
                 <Link
                   href={`/devlogs/${post.slug}`}
-                  className="flex-1 group cursor-pointer"
+                  className="group cursor-pointer flex flex-col items-center gap-2 min-w-[160px] max-w-[180px]"
                 >
-                  {/* Date */}
-                  <div className="flex items-center gap-2 text-xs text-muted mb-2">
-                    <Calendar size={10} strokeWidth={1.5} />
-                    <span>{new Date(post.createdAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })}</span>
+                  {/* Timeline Dot */}
+                  <div className="relative">
+                    {/* Glow effect for the first (latest) post */}
+                    {index === 0 && (
+                      <div className="absolute inset-0 rounded-full bg-accent/30 blur-md animate-pulse" />
+                    )}
+                    <div className={`relative w-10 h-10 rounded-full bg-surface flex items-center justify-center transition-all ${
+                      index === 0
+                        ? 'border-3 border-accent shadow-lg shadow-accent/50'
+                        : 'border-2 border-border'
+                    }`}>
+                      <div className={`w-2 h-2 rounded-full ${
+                        index === 0 ? 'bg-accent animate-pulse' : 'bg-muted'
+                      }`} />
+                    </div>
                   </div>
 
                   {/* Title */}
-                  <h4 className="text-base font-semibold text-foreground mb-2 group-hover:text-accent transition-colors tracking-tight" style={{ fontFamily: 'Archivo, sans-serif' }}>
-                    {post.title}
-                  </h4>
-
-                  {/* Summary */}
-                  <p className="text-xs text-secondary leading-relaxed line-clamp-2">
-                    {getSummary(post.content)}
-                  </p>
+                  <div className="text-center">
+                    <h4 className={`text-xs font-semibold tracking-tight line-clamp-2 transition-colors ${
+                      index === 0
+                        ? 'text-accent'
+                        : 'text-foreground group-hover:text-accent'
+                    }`} style={{ fontFamily: 'Archivo, sans-serif' }}>
+                      {post.title}
+                    </h4>
+                  </div>
                 </Link>
+
+                {/* Connecting Line */}
+                {index < posts.length - 1 && (
+                  <div className="w-8 h-0.5 bg-border flex-shrink-0 mx-2" />
+                )}
               </div>
             ))}
-          </div>
 
-          {/* Timeline End Indicator */}
-          <div className="relative flex items-center gap-4 mt-6">
-            <div className="relative z-10 flex-shrink-0">
-              <div className="w-12 h-12 rounded-full bg-surface border-4 border-border-strong flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-muted" />
+            {/* End Indicator */}
+            <div className="flex items-center flex-shrink-0 ml-2">
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-surface border-2 border-border flex items-center justify-center">
+                  <ArrowRight size={16} strokeWidth={1.5} className="text-muted" />
+                </div>
+                <span className="text-xs text-muted whitespace-nowrap">More...</span>
               </div>
-            </div>
-            <div className="flex-1 text-xs text-muted">
-              Journey continues...
             </div>
           </div>
         </div>
