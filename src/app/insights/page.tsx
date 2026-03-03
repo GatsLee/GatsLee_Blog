@@ -1,9 +1,12 @@
 import { prisma } from "@/lib/db";
-import PostList from "@/components/posts/PostList";
+import InsightsList from "./InsightsList";
 
-export default async function TroubleshootingPage() {
+export default async function InsightsPage() {
   const posts = await prisma.post.findMany({
-    where: { category: "troubleshooting", published: true },
+    where: {
+      category: { in: ["devlog", "troubleshooting"] },
+      published: true,
+    },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
@@ -13,6 +16,8 @@ export default async function TroubleshootingPage() {
       content: true,
       createdAt: true,
       tags: true,
+      locale: true,
+      translationKey: true,
     },
   });
 
@@ -21,13 +26,5 @@ export default async function TroubleshootingPage() {
     createdAt: p.createdAt.toISOString(),
   }));
 
-  return (
-    <div className="max-w-5xl mx-auto">
-      <PostList
-        posts={serialized}
-        basePath="/devlogs"
-        directoryPath="/var/www/troubleshoot"
-      />
-    </div>
-  );
+  return <InsightsList posts={serialized} />;
 }

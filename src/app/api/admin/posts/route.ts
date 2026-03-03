@@ -10,6 +10,8 @@ export async function GET() {
       slug: true,
       category: true,
       published: true,
+      pinned: true,
+      githubRepo: true,
       createdAt: true,
       tags: true,
       _count: { select: { comments: true } },

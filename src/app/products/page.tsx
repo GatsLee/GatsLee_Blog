@@ -1,18 +1,19 @@
 import { prisma } from "@/lib/db";
-import PostList from "@/components/posts/PostList";
+import ProductGallery from "./ProductGallery";
 
-export default async function DevLogsPage() {
+export default async function ProductsPage() {
   const posts = await prisma.post.findMany({
-    where: { category: "devlog", published: true },
+    where: { category: { in: ["product", "agent"] }, published: true },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
       title: true,
       slug: true,
-      category: true,
       content: true,
       createdAt: true,
       tags: true,
+      locale: true,
+      category: true,
     },
   });
 
@@ -21,13 +22,5 @@ export default async function DevLogsPage() {
     createdAt: p.createdAt.toISOString(),
   }));
 
-  return (
-    <div className="max-w-5xl mx-auto">
-      <PostList
-        posts={serialized}
-        basePath="/devlogs"
-        directoryPath="/var/www/dev_logs"
-      />
-    </div>
-  );
+  return <ProductGallery posts={serialized} />;
 }

@@ -24,10 +24,18 @@ export async function PUT(
 ) {
   const { id } = await params;
   const body = await request.json();
+  const postId = parseInt(id);
 
   try {
+    // If pinning this post, unpin all others first
+    if (body.pinned === true) {
+      await prisma.post.updateMany({
+        where: { id: { not: postId } },
+        data: { pinned: false },
+      });
+    }
     const post = await prisma.post.update({
-      where: { id: parseInt(id) },
+      where: { id: postId },
       data: body,
     });
     return NextResponse.json(post);

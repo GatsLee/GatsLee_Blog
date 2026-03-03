@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Terminal, CheckCircle, XCircle } from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
-
 type ToastType = "success" | "error" | "info" | null;
 
 export default function LoginPage() {
@@ -17,7 +15,6 @@ export default function LoginPage() {
     message: "",
   });
   const router = useRouter();
-  const { t } = useLanguage();
 
   // Check if user is already logged in and redirect immediately
   useEffect(() => {
@@ -68,14 +65,14 @@ export default function LoginPage() {
           router.refresh();
         }, 1000);
       } else {
-        const errorMessage = data.error || t("login.denied");
+        const errorMessage = data.error || "ACCESS DENIED: Invalid credentials";
         console.log("[CLIENT] Login failed:", errorMessage);
         setError(errorMessage);
         showToast("error", errorMessage);
       }
     } catch (err) {
       console.error("[CLIENT] Login error:", err);
-      const errorMessage = t("error.connection");
+      const errorMessage = "CONNECTION ERROR";
       setError(errorMessage);
       showToast("error", errorMessage);
     } finally {
@@ -89,20 +86,20 @@ export default function LoginPage() {
         <div className="flex items-center text-[#d4d4dc] mb-8">
           <Terminal className="mr-2" size={20} />
           <h1 className="text-lg font-bold tracking-wider">
-            {t("login.title")}
+            ADMIN AUTHENTICATION
           </h1>
         </div>
 
         <div className="text-xs text-[#8888a0] font-mono mb-6 border-b border-[#2e2e4a] pb-4">
-          {t("login.command")}
+          root@gats-lab: sudo login
           <br />
-          {t("login.desc")}
+          Password required for elevated access.
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs text-[#8888a0] mb-2 font-mono uppercase">
-              {t("login.username")}
+              Username
             </label>
             <input
               type="text"
@@ -116,7 +113,7 @@ export default function LoginPage() {
           </div>
           <div>
             <label className="block text-xs text-[#8888a0] mb-2 font-mono uppercase">
-              {t("login.password")}
+              Password
             </label>
             <input
               type="password"
@@ -137,7 +134,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-[#d4a054] hover:bg-[#c49544] text-[#1a1a2e] font-bold py-3 text-sm transition-colors uppercase tracking-wider rounded disabled:opacity-50 cursor-pointer"
           >
-            {loading ? t("login.loading") : t("login.submit")}
+            {loading ? "Authenticating..." : "Authenticate"}
           </button>
         </form>
       </div>

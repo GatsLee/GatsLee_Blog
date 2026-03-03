@@ -1,54 +1,54 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
-  type ReactNode,
-} from "react";
-import { translations, type TranslationKey, type Locale } from "@/lib/i18n";
+import { createContext, useContext, useEffect, useState } from "react";
+import { translations, type Locale, type TranslationKeys } from "@/i18n/translations";
 
-interface LanguageContextType {
+interface LanguageContextValue {
   locale: Locale;
-  setLocale: (l: Locale) => void;
-  t: (key: TranslationKey) => string;
+  t: TranslationKeys;
+  setLocale: (locale: Locale) => void;
 }
 
-const LanguageContext = createContext<LanguageContextType>({
-  locale: "en",
+const LanguageContext = createContext<LanguageContextValue>({
+  locale: "ko",
+  t: translations.ko,
   setLocale: () => {},
-  t: (key: string) => key,
 });
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
+function detectLocale(): Locale {
+  // 1. Check localStorage preference
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("locale");
+    if (saved === "ko" || saved === "en") return saved;
+
+    // 2. Check browser language
+    const lang = navigator.language || "";
+    if (lang.startsWith("ko")) return "ko";
+  }
+  // 3. Default to English for non-Korean browsers
+  return "en";
+}
+
+export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  const [locale, setLocaleState] = useState<Locale>("ko");
 
   useEffect(() => {
-    const saved = localStorage.getItem("locale") as Locale | null;
-    if (saved === "en" || saved === "ko") {
-      setLocaleState(saved);
-    }
+    setLocaleState(detectLocale());
   }, []);
 
-  const setLocale = useCallback((l: Locale) => {
+  const setLocale = (l: Locale) => {
     setLocaleState(l);
     localStorage.setItem("locale", l);
-  }, []);
-
-  const t = useCallback(
-    (key: TranslationKey) => {
-      return translations[key]?.[locale] ?? key;
-    },
-    [locale]
-  );
+    document.documentElement.lang = l;
+  };
 
   return (
-    <LanguageContext.Provider value={{ locale, setLocale, t }}>
+    <LanguageContext.Provider value={{ locale, t: translations[locale], setLocale }}>
       {children}
     </LanguageContext.Provider>
   );
 }
 
-export const useLanguage = () => useContext(LanguageContext);
+export function useLanguage() {
+  return useContext(LanguageContext);
+}

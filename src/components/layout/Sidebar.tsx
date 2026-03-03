@@ -1,40 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useLanguage } from "@/context/LanguageContext";
-import type { TranslationKey } from "@/lib/i18n";
 import {
-  HardDrive,
-  FileText,
-  AlertCircle,
-  Terminal,
+  Monitor,
+  Package,
+  BookOpen,
+  Map,
+  MessageCircle,
   Save,
   Settings,
   X,
   ChevronLeft,
   Menu,
-  TrendingUp,
   Github,
   Linkedin,
   Mail,
 } from "lucide-react";
-
-const navItems: { href: string; icon: typeof HardDrive; labelKey: TranslationKey }[] = [
-  { href: "/", icon: HardDrive, labelKey: "nav.home" },
-  { href: "/progress", icon: TrendingUp, labelKey: "nav.progress" },
-  { href: "/devlogs", icon: FileText, labelKey: "nav.devlogs" },
-  { href: "/troubleshooting", icon: AlertCircle, labelKey: "nav.troubleshooting" },
-  { href: "/guestlogs", icon: Terminal, labelKey: "nav.guestlogs" },
-];
+import { useLanguage } from "@/context/LanguageContext";
+import { useTheme } from "@/context/ThemeContext";
+import VisitorCount from "@/components/home/VisitorCount";
 
 export default function Sidebar({ isAdmin }: { isAdmin: boolean }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
   const { t } = useLanguage();
+  const { theme } = useTheme();
+  const pawnSrc = theme === "dark" ? "/white_pawn.ico" : "/black_pawn.ico";
+
+  // Reset mobile state when crossing the md breakpoint
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const handler = (e: MediaQueryListEvent) => {
+      if (!e.matches) {
+        setIsMobileOpen(false);
+      }
+    };
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const navItems = [
+    { href: "/", icon: Monitor, label: t.nav.home },
+    { href: "/products", icon: Package, label: t.nav.products },
+    { href: "/insights", icon: BookOpen, label: t.nav.insights },
+    { href: "/blueprint", icon: Map, label: t.nav.blueprint },
+    { href: "/connect", icon: MessageCircle, label: t.nav.connect },
+  ];
 
   return (
     <>
@@ -59,7 +74,7 @@ export default function Sidebar({ isAdmin }: { isAdmin: boolean }) {
       >
         {/* Header */}
         <div
-          className={`${isCollapsed ? "px-4 py-6" : "px-8 py-6"} border-b border-border flex items-center justify-between`}
+          className={`${isCollapsed ? "p-4" : "px-8 py-8"} flex items-center justify-between`}
         >
           <Link
             href="/"
@@ -68,24 +83,12 @@ export default function Sidebar({ isAdmin }: { isAdmin: boolean }) {
           >
             {!isCollapsed && (
               <>
-                <Image
-                  src="/favicon.png"
-                  alt="Pawn"
-                  width={28}
-                  height={28}
-                  className="object-contain"
-                />
-                <span className="whitespace-nowrap">{t("sidebar.title")}</span>
+                <Image src={pawnSrc} alt="Pawn" width={28} height={28} className="object-contain" />
+                <span className="whitespace-nowrap">GATS LAB</span>
               </>
             )}
             {isCollapsed && (
-              <Image
-                src="/favicon.png"
-                alt="Pawn"
-                width={32}
-                height={32}
-                className="object-contain"
-              />
+              <Image src={pawnSrc} alt="Pawn" width={32} height={32} className="object-contain" />
             )}
           </Link>
           {!isCollapsed && (
@@ -106,8 +109,11 @@ export default function Sidebar({ isAdmin }: { isAdmin: boolean }) {
           </button>
         </div>
 
+        {/* Separator */}
+        <div className={`${isCollapsed ? "mx-3" : "mx-6"} border-t border-border`} />
+
         {/* Navigation */}
-        <div className={`${isCollapsed ? "px-3 py-8" : "px-6 py-8"} flex-1 overflow-y-auto`}>
+        <div className={`${isCollapsed ? "px-3 py-3" : "px-6 py-6"} flex-1 overflow-y-auto`}>
           {isCollapsed && (
             <button
               onClick={() => setIsCollapsed(false)}
@@ -120,87 +126,74 @@ export default function Sidebar({ isAdmin }: { isAdmin: boolean }) {
 
           <nav className="space-y-1">
             {navItems.map((item) => {
-              const active = pathname === item.href;
-              const label = t(item.labelKey);
+              const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  title={isCollapsed ? label : undefined}
-                  onClick={() => {
-                    // Auto-minimize sidebar on menu click
-                    setIsMobileOpen(false); // Close on mobile
-                    setIsCollapsed(true); // Collapse on desktop
-                  }}
-                  className={`w-full flex items-center ${isCollapsed ? "justify-center px-3" : "px-4"} py-3 text-sm font-medium transition-all duration-200 rounded cursor-pointer ${
+                  title={isCollapsed ? item.label : undefined}
+                  onClick={() => { setIsMobileOpen(false); setIsCollapsed(true); }}
+                  className={`w-full flex items-center ${isCollapsed ? "justify-center px-3" : "px-4"} py-3 text-sm font-medium transition-all duration-200 rounded cursor-pointer relative overflow-hidden ${
                     active
-                      ? "bg-foreground text-background"
+                      ? "bg-hover text-foreground"
                       : "text-muted hover:text-foreground hover:bg-hover"
                   }`}
                 >
-                  <span
-                    className={`${isCollapsed ? "" : "mr-3"} shrink-0`}
-                  >
-                    <item.icon size={18} strokeWidth={1.5} />
+                  {active && (
+                    <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-accent rounded-r" />
+                  )}
+                  <span className={`${isCollapsed ? "" : "mr-3"} shrink-0`}>
+                    <item.icon size={18} strokeWidth={1.5} className={active ? "text-accent" : ""} />
                   </span>
-                  {!isCollapsed && <span className="whitespace-nowrap">{label}</span>}
+                  {!isCollapsed && <span className="whitespace-nowrap">{item.label}</span>}
                 </Link>
               );
             })}
           </nav>
 
           {isAdmin && (
-            <div className={`${isCollapsed ? "mt-8 pt-8" : "mt-12 pt-8"} border-t border-border space-y-1`}>
+            <div className={`${isCollapsed ? "mt-8 pt-8" : "mt-12 pt-8"} space-y-1`}>
               <Link
                 href="/write"
-                title={isCollapsed ? t("sidebar.admin") : undefined}
-                onClick={() => {
-                  setIsMobileOpen(false);
-                  setIsCollapsed(true);
-                }}
+                title={isCollapsed ? t.nav.write : undefined}
+                onClick={() => { setIsMobileOpen(false); setIsCollapsed(true); }}
                 className={`flex items-center ${isCollapsed ? "justify-center px-3" : "px-4"} py-3 text-sm font-medium transition-colors rounded cursor-pointer ${
-                  pathname === "/write"
-                    ? "text-accent"
-                    : "text-muted hover:text-foreground hover:bg-hover"
+                  pathname === "/write" ? "text-accent" : "text-muted hover:text-foreground hover:bg-hover"
                 }`}
               >
                 <Save size={16} strokeWidth={1.5} className={`shrink-0 ${isCollapsed ? "" : "mr-3"}`} />
-                {!isCollapsed && <span className="whitespace-nowrap">{t("sidebar.admin")}</span>}
+                {!isCollapsed && <span className="whitespace-nowrap">{t.nav.write}</span>}
               </Link>
               <Link
                 href="/admin"
-                title={isCollapsed ? t("sidebar.adminDashboard") : undefined}
-                onClick={() => {
-                  setIsMobileOpen(false);
-                  setIsCollapsed(true);
-                }}
+                title={isCollapsed ? t.nav.admin : undefined}
+                onClick={() => { setIsMobileOpen(false); setIsCollapsed(true); }}
                 className={`flex items-center ${isCollapsed ? "justify-center px-3" : "px-4"} py-3 text-sm font-medium transition-colors rounded cursor-pointer ${
-                  pathname === "/admin"
-                    ? "text-accent"
-                    : "text-muted hover:text-foreground hover:bg-hover"
+                  pathname === "/admin" ? "text-accent" : "text-muted hover:text-foreground hover:bg-hover"
                 }`}
               >
                 <Settings size={16} strokeWidth={1.5} className={`shrink-0 ${isCollapsed ? "" : "mr-3"}`} />
-                {!isCollapsed && <span className="whitespace-nowrap">{t("sidebar.adminDashboard")}</span>}
+                {!isCollapsed && <span className="whitespace-nowrap">{t.nav.admin}</span>}
               </Link>
             </div>
           )}
         </div>
 
-        {/* Social Footer */}
+        {/* Footer */}
         <div
-          className={`${isCollapsed ? "px-3 py-6" : "px-6 py-6"} border-t border-border bg-surface`}
+          className={`${isCollapsed ? "p-3" : "p-6"} bg-surface space-y-3`}
         >
-          {!isCollapsed && (
-            <p className="text-xs text-muted mb-4 font-medium uppercase tracking-wider">
-              {t("sidebar.connect")}
-            </p>
-          )}
+          {/* Social buttons */}
           <div className={`flex ${isCollapsed ? "flex-col items-center" : ""} gap-2`}>
             <SocialButton icon={<Github size={18} strokeWidth={1.5} />} href="https://github.com/GatsLee" label="GitHub" />
             <SocialButton icon={<Linkedin size={18} strokeWidth={1.5} />} href="https://www.linkedin.com/in/joon-yeol-lee-567421281/" label="LinkedIn" />
             <SocialButton icon={<Mail size={18} strokeWidth={1.5} />} href="mailto:naanthonylee@gmail.com" label="Email" />
           </div>
+
+          {/* Visitor Count — only when expanded */}
+          {!isCollapsed && (
+            <VisitorCount />
+          )}
         </div>
       </aside>
     </>
@@ -213,7 +206,7 @@ function SocialButton({ icon, href, label }: { icon: React.ReactNode; href: stri
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center justify-center w-10 h-10 rounded border border-border text-muted hover:text-accent hover:border-accent hover:bg-hover transition-all duration-200 cursor-pointer"
+      className="flex items-center justify-center w-10 h-10 rounded text-muted hover:text-accent transition-colors duration-200 cursor-pointer"
       title={label}
     >
       {icon}

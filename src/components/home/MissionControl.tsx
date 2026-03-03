@@ -1,6 +1,5 @@
 "use client";
 
-import { useLanguage } from "@/context/LanguageContext";
 import { Target, Activity, CheckCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -15,7 +14,6 @@ export default function MissionControl({
   status = "running",
   targetDate
 }: MissionControlProps) {
-  const { t, locale } = useLanguage();
   const [daysRemaining, setDaysRemaining] = useState<number | null>(null);
 
   useEffect(() => {
@@ -49,7 +47,7 @@ export default function MissionControl({
   const currentStatus = statusConfig[status];
 
   return (
-    <div className="bg-surface border border-border rounded-lg p-6 transition-colors">
+    <div className="bg-surface card-border rounded-lg p-6 transition-colors">
       {/* Header with Status Badge */}
       <div className="flex items-start justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -73,7 +71,7 @@ export default function MissionControl({
 
       {/* Objective */}
       <p className="text-foreground text-base leading-relaxed mb-6" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-        {t("header.objective")}
+        build **Life OS** to maximize my creativity and productivity.
       </p>
 
       {/* Progress Bar */}

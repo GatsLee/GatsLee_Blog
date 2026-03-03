@@ -13,39 +13,36 @@ interface PostItem {
   content: string;
   createdAt: string;
   tags?: string;
+  locale?: string;
+  translationKey?: string | null;
 }
 
 export default function PostList({
   posts,
   basePath,
-  directoryPath,
+  title,
 }: {
   posts: PostItem[];
   basePath: string;
-  directoryPath: string;
+  title?: string;
+  directoryPath?: string; // kept for backward-compat, ignored
 }) {
-  const { t } = useLanguage();
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const { t } = useLanguage();
 
-  // Extract all unique tags from posts
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
     posts.forEach(post => {
       if (post.tags) {
         try {
           const parsedTags = JSON.parse(post.tags);
-          if (Array.isArray(parsedTags)) {
-            parsedTags.forEach(tag => tagSet.add(tag));
-          }
-        } catch {
-          // Ignore invalid JSON
-        }
+          if (Array.isArray(parsedTags)) parsedTags.forEach(tag => tagSet.add(tag));
+        } catch { /* ignore */ }
       }
     });
     return Array.from(tagSet).sort();
   }, [posts]);
 
-  // Filter posts by selected tag
   const filteredPosts = useMemo(() => {
     if (!selectedTag) return posts;
     return posts.filter(post => {
@@ -59,37 +56,39 @@ export default function PostList({
     });
   }, [posts, selectedTag]);
 
+  const pageTitle = title || basePath;
+
   return (
     <div className="animate-fadeIn max-w-7xl mx-auto">
-      {/* Breadcrumb Navigation */}
+      {/* Breadcrumb */}
       <div className="mb-6 flex items-center gap-2 text-sm text-muted">
         <Link href="/" className="hover:text-accent transition-colors flex items-center gap-1">
           <Home size={14} strokeWidth={1.5} />
-          <span>{t("breadcrumb.root")}</span>
+          <span>{t.nav.home}</span>
         </Link>
         <ChevronRight size={14} strokeWidth={1.5} />
-        <span className="text-foreground font-medium">{directoryPath}</span>
+        <span className="text-foreground font-medium">{pageTitle}</span>
       </div>
 
-      {/* Header with Swiss typography */}
+      {/* Header */}
       <div className="mb-8">
         <h2
           className="text-3xl md:text-4xl text-foreground font-semibold tracking-tight mb-3"
           style={{ fontFamily: 'Archivo, sans-serif' }}
         >
-          {directoryPath}
+          {pageTitle}
         </h2>
         <p className="text-sm text-muted font-medium">
-          {filteredPosts.length} {filteredPosts.length === 1 ? 'Article' : 'Articles'}
+          {filteredPosts.length} {filteredPosts.length === 1 ? t.insights.comment : t.insights.comments}
         </p>
       </div>
 
       {/* Tag Filter */}
       {allTags.length > 0 && (
-        <div className="mb-8 p-4 bg-surface border border-border rounded-lg">
+        <div className="mb-8 p-4 bg-surface card-border rounded-lg">
           <div className="flex items-center gap-3 mb-3">
             <span className="text-xs text-muted uppercase tracking-wider font-semibold">
-              {t("filter.tags")}
+              {t.post.tags}
             </span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -98,10 +97,10 @@ export default function PostList({
               className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all cursor-pointer ${
                 selectedTag === null
                   ? 'bg-accent text-white'
-                  : 'bg-hover text-foreground hover:bg-accent/10 border border-border'
+                  : 'bg-hover text-foreground hover:bg-accent/10 card-border'
               }`}
             >
-              {t("filter.all")}
+              All
             </button>
             {allTags.map(tag => (
               <button
@@ -110,7 +109,7 @@ export default function PostList({
                 className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
                   selectedTag === tag
                     ? 'bg-accent text-white'
-                    : 'bg-hover text-foreground hover:bg-accent/10 border border-border'
+                    : 'bg-hover text-foreground hover:bg-accent/10 card-border'
                 }`}
               >
                 #{tag}
@@ -123,20 +122,15 @@ export default function PostList({
         </div>
       )}
 
-      {/* Minimal grid layout */}
+      {/* Post list */}
       <div className="space-y-12">
         {filteredPosts.map((post) => {
-          // Parse tags for display
           let postTags: string[] = [];
           if (post.tags) {
             try {
               const parsedTags = JSON.parse(post.tags);
-              if (Array.isArray(parsedTags)) {
-                postTags = parsedTags;
-              }
-            } catch {
-              // Ignore invalid JSON
-            }
+              if (Array.isArray(parsedTags)) postTags = parsedTags;
+            } catch { /* ignore */ }
           }
 
           return (
@@ -145,16 +139,21 @@ export default function PostList({
                 href={`${basePath}/${post.slug}`}
                 className="block border-l-2 border-transparent hover:border-accent pl-8 py-4 transition-all duration-200 cursor-pointer"
               >
-                {/* Date - Small, subtle */}
-                <time className="text-xs text-muted uppercase tracking-wider font-medium block mb-3">
-                  {new Date(post.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </time>
+                {/* Meta row: date + locale badge */}
+                <div className="flex items-center gap-3 mb-3">
+                  <time className="text-xs text-muted uppercase tracking-wider font-medium">
+                    {new Date(post.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric', month: 'short', day: 'numeric'
+                    })}
+                  </time>
+                  {post.locale && (
+                    <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded card-border text-muted">
+                      {post.locale}
+                    </span>
+                  )}
+                </div>
 
-                {/* Title - Bold, Archivo font */}
+                {/* Title */}
                 <h3
                   className="text-2xl md:text-3xl font-semibold text-foreground group-hover:text-accent transition-colors mb-4 tracking-tight"
                   style={{ fontFamily: 'Archivo, sans-serif' }}
@@ -162,7 +161,7 @@ export default function PostList({
                   {post.title}
                 </h3>
 
-                {/* Excerpt - Clean, readable */}
+                {/* Excerpt */}
                 <p className="text-secondary text-base leading-relaxed line-clamp-2 mb-4 max-w-3xl">
                   {post.content}
                 </p>
@@ -173,7 +172,7 @@ export default function PostList({
                     {postTags.map(tag => (
                       <span
                         key={tag}
-                        className="px-2 py-1 text-xs font-medium bg-hover text-muted rounded border border-border"
+                        className="px-2 py-1 text-xs font-medium bg-hover text-muted rounded card-border"
                       >
                         #{tag}
                       </span>
@@ -181,9 +180,9 @@ export default function PostList({
                   </div>
                 )}
 
-                {/* Read more indicator */}
+                {/* Read more */}
                 <div className="flex items-center gap-2 text-sm text-muted group-hover:text-accent transition-colors font-medium">
-                  <span>Read article</span>
+                  <span>{t.insights.readMore}</span>
                   <ArrowRight size={16} strokeWidth={2} className="group-hover:translate-x-1 transition-transform" />
                 </div>
               </Link>
@@ -193,7 +192,7 @@ export default function PostList({
 
         {filteredPosts.length === 0 && (
           <div className="py-24 text-center">
-            <p className="text-muted text-lg">No articles found</p>
+            <p className="text-muted text-lg">{t.insights.empty}</p>
           </div>
         )}
       </div>

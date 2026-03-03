@@ -4,9 +4,11 @@ import { prisma } from "@/lib/db";
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
+  const locale = searchParams.get("locale"); // optional: "ko" | "en"
 
   const where: Record<string, unknown> = { published: true };
   if (category) where.category = category;
+  if (locale) where.locale = locale;
 
   const posts = await prisma.post.findMany({
     where,
@@ -20,6 +22,8 @@ export async function GET(request: NextRequest) {
       createdAt: true,
       published: true,
       tags: true,
+      locale: true,
+      translationKey: true,
     },
   });
 
@@ -29,7 +33,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, slug, content, category, tags } = body;
+    const {
+      title, slug, content, category, tags, locale, translationKey,
+      coverImage, description, published,
+      demoVideo, demoImages, targetAudience, purpose, expectedEffect,
+    } = body;
 
     if (!title || !content || !category) {
       return NextResponse.json(
@@ -52,6 +60,16 @@ export async function POST(request: NextRequest) {
         content,
         category,
         tags: tags || "[]",
+        locale: locale || "ko",
+        translationKey: translationKey || null,
+        coverImage: coverImage || "",
+        description: description || "",
+        published: published !== undefined ? published : true,
+        demoVideo: demoVideo || null,
+        demoImages: demoImages || null,
+        targetAudience: targetAudience || null,
+        purpose: purpose || null,
+        expectedEffect: expectedEffect || null,
       },
     });
 

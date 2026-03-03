@@ -1,44 +1,77 @@
 import BootSequence from "@/components/home/BootSequence";
 import HomeContent from "@/components/home/HomeContent";
-import { getServerMetrics, formatUptime, formatBytes } from "@/lib/server-metrics";
+import { prisma } from "@/lib/db";
+import { fetchRecentCommits } from "@/lib/github";
+import type { GitCommit } from "@/lib/github";
 
-export default function HomePage() {
-  let metrics;
+async function getPinnedPost() {
   try {
-    metrics = getServerMetrics();
+    const post = await prisma.post.findFirst({
+      where: { pinned: true, published: true },
+      select: {
+        title: true,
+        slug: true,
+        content: true,
+        tags: true,
+        githubRepo: true,
+        createdAt: true,
+      },
+    });
+    if (!post) return null;
+    return { ...post, createdAt: post.createdAt.toISOString() };
   } catch {
-    metrics = null;
+    return null;
   }
+}
 
-  // Calculate RAM percentage
-  const ramPercentage = metrics
-    ? Math.round((metrics.memory.used / metrics.memory.total) * 100)
-    : 0;
+async function getRecentProducts() {
+  try {
+    const posts = await prisma.post.findMany({
+      where: { category: "product", published: true, locale: "ko" },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      select: { id: true, title: true, slug: true, tags: true, locale: true },
+    });
+    return posts;
+  } catch {
+    return [];
+  }
+}
 
-  const homeServerMetrics = [
-    { label: "UPTIME", value: metrics ? formatUptime(metrics.uptime) : "N/A" },
-    { label: "CONTAINERS", value: metrics ? `${metrics.containers.length} active` : "N/A" },
-    {
-      label: "RAM",
-      value: metrics
-        ? `${formatBytes(metrics.memory.used)} / ${formatBytes(metrics.memory.total)}`
-        : "N/A",
-      percentage: ramPercentage,
-    },
-  ];
+async function getRecentAgents() {
+  try {
+    const posts = await prisma.post.findMany({
+      where: { category: "agent", published: true, locale: "ko" },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      select: { id: true, title: true, slug: true, tags: true, locale: true },
+    });
+    return posts;
+  } catch {
+    return [];
+  }
+}
 
-  const aiMetrics = [
-    { label: "TOKEN IN", value: "\u2014" },
-    { label: "TOKEN OUT", value: "\u2014" },
-    { label: "TOKEN/S", value: "\u2014" },
-    { label: "MODEL", value: "\u2014" },
-  ];
+export default async function HomePage() {
+  const [pinnedPost, products, agents] = await Promise.all([
+    getPinnedPost(),
+    getRecentProducts(),
+    getRecentAgents(),
+  ]);
+
+  let commits: GitCommit[] = [];
+  if (pinnedPost?.githubRepo) {
+    commits = await fetchRecentCommits(pinnedPost.githubRepo);
+  }
 
   return (
     <BootSequence>
       <HomeContent
-        homeServerMetrics={homeServerMetrics}
-        aiMetrics={aiMetrics}
+        commits={commits}
+        repoName={pinnedPost?.githubRepo ?? ""}
+        pinnedPost={pinnedPost}
+        products={products}
+        agents={agents}
       />
     </BootSequence>
   );

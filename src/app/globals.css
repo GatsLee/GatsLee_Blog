@@ -1,10 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme inline {
   /* Typography */
-  --font-heading: 'Archivo', 'Noto Sans KR', sans-serif;
-  --font-body: 'Space Grotesk', 'Noto Sans KR', sans-serif;
+  --font-heading: 'Archivo', 'Pretendard', sans-serif;
+  --font-body: 'Space Grotesk', 'Pretendard', sans-serif;
 
   /* Theme-aware colors for Tailwind */
   --color-background: light-dark(#FAFAFA, #09090B);
@@ -70,7 +71,7 @@
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
-  font-family: 'Space Grotesk', 'Noto Sans KR', sans-serif;
+  font-family: 'Space Grotesk', 'Pretendard', sans-serif;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -88,9 +89,32 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--color-border); }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-border-strong); }
 
+/* Uniform card border — single shorthand guarantees identical color on all sides */
+.card-border {
+  border: 1px solid var(--color-border);
+}
+
 /* Fade-in animation utility */
 .animate-fadeIn {
   animation: var(--animate-fadeIn);
+}
+
+/* Slide-in animation for Connect page */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slideIn {
+  animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Pawn pulse animation for boot sequence */
+@keyframes pawnPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.08); }
+}
+.animate-pawnPulse {
+  animation: pawnPulse 1.2s ease-in-out infinite;
 }
 
 /* Swiss grid utilities */
@@ -126,7 +150,7 @@ body {
 
 /* Typography hierarchy */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Archivo', 'Noto Sans KR', sans-serif;
+  font-family: 'Archivo', 'Pretendard', sans-serif;
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: -0.02em;

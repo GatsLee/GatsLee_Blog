@@ -24,6 +24,12 @@ export default function TypingObjective({ text }: TypingObjectiveProps) {
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
 
+  // Reset animation when text changes (e.g. language switch)
+  useEffect(() => {
+    setDisplayedText("");
+    setIsTyping(true);
+  }, [text]);
+
   useEffect(() => {
     if (!isTyping) {
       // Wait 20 seconds before restarting

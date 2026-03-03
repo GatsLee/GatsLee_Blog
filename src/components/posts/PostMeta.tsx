@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { ChevronLeft, Calendar, Tag } from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
 
 interface PostMetaProps {
   date: string;
@@ -10,19 +9,17 @@ interface PostMetaProps {
 }
 
 export function PostBackLink() {
-  const { t } = useLanguage();
   return (
     <Link
-      href="/devlogs"
+      href="/insights"
       className="mb-8 text-muted hover:text-accent text-sm flex items-center transition-all hover:-translate-x-1 duration-200 inline-flex cursor-pointer"
     >
-      <ChevronLeft size={16} strokeWidth={1.5} className="mr-1" /> {t("post.back")}
+      <ChevronLeft size={16} strokeWidth={1.5} className="mr-1" /> CD ..
     </Link>
   );
 }
 
 export function PostMetaInfo({ date, category }: PostMetaProps) {
-  const { t } = useLanguage();
   return (
     <div className="flex items-center text-xs text-muted space-x-4 tracking-wide">
       <span className="flex items-center gap-1.5">

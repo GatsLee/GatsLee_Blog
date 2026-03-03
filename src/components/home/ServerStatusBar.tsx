@@ -1,15 +1,12 @@
 "use client";
 
-import { useLanguage } from "@/context/LanguageContext";
-import type { TranslationKey } from "@/lib/i18n";
-
 interface StatusItem {
   label: string;
   value: string;
 }
 
 interface StatusGroup {
-  labelKey: TranslationKey;
+  label: string;
   items: StatusItem[];
 }
 
@@ -18,8 +15,6 @@ interface ServerStatusBarProps {
 }
 
 export default function ServerStatusBar({ groups }: ServerStatusBarProps) {
-  const { t } = useLanguage();
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {groups.map((group, gi) => (
@@ -29,7 +24,7 @@ export default function ServerStatusBar({ groups }: ServerStatusBarProps) {
               className="text-xs uppercase tracking-[0.2em] text-[#71717A] font-semibold mb-6"
               style={{ fontFamily: 'Archivo, sans-serif' }}
             >
-              {t(group.labelKey)}
+              {group.label}
             </h3>
             <div className="space-y-3">
               {group.items.map((item, i) => (

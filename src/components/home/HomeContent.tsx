@@ -1,75 +1,99 @@
 "use client";
 
 import Link from "next/link";
-import { useLanguage } from "@/context/LanguageContext";
+import { ArrowRight, Crosshair } from "lucide-react";
+import HeroSection from "@/components/home/HeroSection";
+import BuildProgress from "@/components/home/BuildProgress";
 import MetricsPanel from "@/components/home/MetricsPanel";
-import BuildProgressTimeline from "@/components/home/BuildProgressTimeline";
+import LiveWorkforcePanel from "@/components/home/LiveWorkforcePanel";
+import { useLanguage } from "@/context/LanguageContext";
+import type { GitCommit } from "@/lib/github";
 
-interface MetricItem {
-  label: string;
-  value: string;
-  percentage?: number;
+interface PostCard {
+  id: number;
+  title: string;
+  slug: string;
+  tags: string;
+  locale: string;
+}
+
+interface PinnedPost {
+  title: string;
+  slug: string;
+  content: string;
+  tags: string;
+  githubRepo: string;
+  createdAt: string;
 }
 
 interface HomeContentProps {
-  homeServerMetrics: MetricItem[];
-  aiMetrics: MetricItem[];
+  commits: GitCommit[];
+  repoName: string;
+  pinnedPost: PinnedPost | null;
+  products: PostCard[];
+  agents: PostCard[];
 }
 
-// Helper function to render text with bold markdown
-function renderWithBold(text: string) {
-  const parts = text.split(/\*\*(.*?)\*\*/g);
-  return parts.map((part, index) =>
-    index % 2 === 1 ? (
-      <strong key={index} className="text-accent font-semibold">
-        {part}
-      </strong>
-    ) : (
-      part
-    )
-  );
-}
-
-export default function HomeContent({ homeServerMetrics, aiMetrics }: HomeContentProps) {
+export default function HomeContent({ commits, repoName, pinnedPost, products, agents }: HomeContentProps) {
   const { t } = useLanguage();
+
+  const excerpt = pinnedPost
+    ? pinnedPost.content
+        .replace(/[#*`\[\]()!]/g, "")
+        .trim()
+        .substring(0, 200) + "..."
+    : "";
 
   return (
     <div className="max-w-7xl mx-auto animate-fadeIn space-y-8">
-      {/* Top Section - Introduction + Metrics (2 columns) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left - Introduction */}
-        <section className="bg-surface border border-border rounded-lg p-6 transition-colors h-full">
-          <p
-            className="text-xs text-muted uppercase tracking-[0.2em] mb-4 font-semibold"
-            style={{ fontFamily: 'Archivo, sans-serif' }}
-          >
-            {t("home.readme")}
-          </p>
-          <p className="text-foreground leading-relaxed text-sm">
-            {renderWithBold(t("home.intro"))}{" "}
-            <Link
-              href="/guestlogs"
-              className="text-accent hover:underline font-medium"
-            >
-              {t("home.intro.link")}
-            </Link>
-            {t("home.intro.end")}
-          </p>
-        </section>
+      {/* [1] Hero Section */}
+      <HeroSection />
 
-        {/* Right - Metrics Panel */}
-        <section className="h-full">
-          <MetricsPanel
-            homeServerMetrics={homeServerMetrics}
-            aiMetrics={aiMetrics}
-          />
-        </section>
-      </div>
-
-      {/* Bottom Section - Build Progress Timeline (full width) */}
-      <section>
-        <BuildProgressTimeline />
+      {/* [2] Build Progress + Infrastructure Status */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <BuildProgress commits={commits} repoName={repoName} pinnedTitle={pinnedPost?.title} />
+        <MetricsPanel />
       </section>
+
+      {/* [3] Live Workforce — Products & Agents */}
+      <LiveWorkforcePanel products={products} agents={agents} />
+
+      {/* [4] Key Focus Project */}
+      {pinnedPost && (
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <Crosshair size={16} className="text-accent" />
+            <h2
+              className="text-xs uppercase tracking-[0.2em] text-muted font-semibold"
+              style={{ fontFamily: "Archivo, sans-serif" }}
+            >
+              {t.home.keyProject}
+            </h2>
+          </div>
+          <Link
+            href={`/products/${pinnedPost.slug}`}
+            className="group block bg-surface card-border rounded-lg p-8 hover:border-accent transition-all duration-200 cursor-pointer"
+          >
+            <h3
+              className="text-xl md:text-2xl font-semibold text-foreground group-hover:text-accent transition-colors mb-3 tracking-tight"
+              style={{ fontFamily: "Archivo, sans-serif" }}
+            >
+              {pinnedPost.title}
+            </h3>
+            <p className="text-secondary text-sm leading-relaxed mb-4 max-w-3xl">
+              {excerpt}
+            </p>
+            <div className="flex items-center gap-2 text-sm text-accent font-medium">
+              <span>{t.home.viewProduct}</span>
+              <ArrowRight
+                size={16}
+                strokeWidth={2}
+                className="group-hover:translate-x-1 transition-transform"
+              />
+            </div>
+          </Link>
+        </section>
+      )}
     </div>
   );
 }

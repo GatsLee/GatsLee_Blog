@@ -1,46 +1,57 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Globe, Sun, Moon } from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
+import { Sun, Moon } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
+import { useLanguage } from "@/context/LanguageContext";
 import TypingObjective from "./TypingObjective";
 
 export default function Header() {
   const [mounted, setMounted] = useState(false);
-  const { locale, setLocale, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
+  const { locale, setLocale, t } = useLanguage();
 
-  // Prevent SSR issues with theme
   useEffect(() => {
     setMounted(true);
   }, []);
 
   return (
-    <header className="h-20 border-b border-border bg-background flex items-center justify-between px-6 md:px-12 shrink-0 z-20 transition-colors duration-300">
+    <header className="h-20 bg-background flex items-center justify-between px-6 md:px-12 shrink-0 z-20 transition-colors duration-300">
       <div className="flex items-center min-w-0 flex-1 pl-12 md:pl-0">
         {/* Desktop version - full text */}
         <div className="hidden sm:flex items-baseline gap-2">
           <h2 className="text-lg md:text-xl text-foreground font-semibold tracking-tight whitespace-nowrap">
-            {t("header.objectiveLabel")}:
+            {t.header.currentObjective}
           </h2>
           <div className="text-sm md:text-base text-foreground font-medium tracking-tight">
-            <TypingObjective text={t("header.objective")} />
+            <TypingObjective text={t.header.objectiveText} />
           </div>
         </div>
 
         {/* Mobile version - shortened */}
         <div className="flex sm:hidden items-baseline gap-2">
           <h2 className="text-base text-foreground font-semibold tracking-tight whitespace-nowrap">
-            {t("header.objectiveLabel")}:
+            {t.header.currentObjective}
           </h2>
           <div className="text-sm text-foreground font-medium tracking-tight">
-            <TypingObjective text={t("header.objectiveMobile")} />
+            <TypingObjective text={t.header.objectiveTextShort} />
           </div>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-1">
+        {/* Language Toggle */}
+        {mounted && (
+          <button
+            onClick={() => setLocale(locale === "en" ? "ko" : "en")}
+            className="flex items-center justify-center w-9 h-9 rounded text-muted hover:text-accent hover:bg-hover transition-all cursor-pointer font-semibold text-sm"
+            aria-label={locale === "en" ? "Switch to Korean" : "Switch to English"}
+            title={locale === "en" ? "Switch to Korean" : "Switch to English"}
+          >
+            {locale === "en" ? "E" : "한"}
+          </button>
+        )}
+
         {/* Theme Toggle */}
         {mounted && (
           <button
@@ -55,20 +66,6 @@ export default function Header() {
             )}
           </button>
         )}
-
-        {/* Language Toggle */}
-        <button
-          onClick={() => setLocale(locale === "en" ? "ko" : "en")}
-          className="flex items-center gap-2 text-sm text-muted hover:text-accent transition-colors cursor-pointer shrink-0"
-          aria-label="Switch language"
-        >
-          <Globe size={16} strokeWidth={1.5} />
-          <span className="font-medium">
-            <span className={locale === "ko" ? "text-accent" : ""}>KR</span>
-            <span className="mx-1 text-border">/</span>
-            <span className={locale === "en" ? "text-accent" : ""}>EN</span>
-          </span>
-        </button>
       </div>
     </header>
   );

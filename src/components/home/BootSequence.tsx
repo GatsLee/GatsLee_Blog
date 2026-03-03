@@ -2,12 +2,21 @@
 
 import { useState, useEffect } from "react";
 
+const bootLines = [
+  { text: "> Initializing system...", delay: 0 },
+  { text: "> Connecting to home server...", delay: 300 },
+  { text: "> Loading AI modules...", delay: 600 },
+  { text: "> Mounting dashboard...", delay: 900 },
+  { text: "> System ready.", delay: 1200, accent: true },
+];
+
 export default function BootSequence({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [loaded, setLoaded] = useState(false);
+  const [visibleLines, setVisibleLines] = useState(0);
 
   useEffect(() => {
     // Skip loading animation if already loaded this session
@@ -16,13 +25,18 @@ export default function BootSequence({
       return;
     }
 
-    // Minimal delay for smooth transition
+    // Show boot lines progressively
+    bootLines.forEach((line, i) => {
+      setTimeout(() => setVisibleLines(i + 1), line.delay);
+    });
+
+    // Transition to content after boot completes
     const timer = setTimeout(() => {
       setLoaded(true);
       if (typeof window !== "undefined") {
         sessionStorage.setItem("loaded", "1");
       }
-    }, 600);
+    }, 1800);
 
     return () => clearTimeout(timer);
   }, []);
@@ -31,44 +45,22 @@ export default function BootSequence({
     return <>{children}</>;
   }
 
-  // Swiss minimalist skeleton loader
   return (
-    <div className="max-w-7xl mx-auto space-y-16 md:space-y-24 animate-pulse">
-      {/* Skeleton for status bars */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="border-l-2 border-border pl-6 py-2 space-y-4">
-          <div className="h-3 bg-hover rounded w-24"></div>
-          <div className="space-y-3">
-            <div className="h-2 bg-hover rounded w-32"></div>
-            <div className="h-2 bg-hover rounded w-28"></div>
-            <div className="h-2 bg-hover rounded w-36"></div>
+    <div className="max-w-7xl mx-auto flex items-center justify-center" style={{ minHeight: "60vh" }}>
+      <div className="space-y-2 font-mono text-sm">
+        {bootLines.slice(0, visibleLines).map((line, i) => (
+          <div
+            key={i}
+            className={`transition-opacity duration-200 ${
+              line.accent ? "text-accent font-semibold" : "text-muted"
+            }`}
+          >
+            {line.text}
+            {i === visibleLines - 1 && !line.accent && (
+              <span className="animate-pulse ml-1">_</span>
+            )}
           </div>
-        </div>
-        <div className="border-l-2 border-border pl-6 py-2 space-y-4">
-          <div className="h-3 bg-hover rounded w-20"></div>
-          <div className="space-y-3">
-            <div className="h-2 bg-hover rounded w-28"></div>
-            <div className="h-2 bg-hover rounded w-32"></div>
-            <div className="h-2 bg-hover rounded w-24"></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Skeleton for diagram */}
-      <div className="space-y-6">
-        <div className="h-6 bg-hover rounded w-48"></div>
-        <div className="h-64 bg-hover rounded"></div>
-      </div>
-
-      {/* Skeleton for intro text */}
-      <div className="grid grid-cols-12 gap-8">
-        <div className="col-span-12 md:col-span-10 md:col-start-2 lg:col-span-8 lg:col-start-3 space-y-4">
-          <div className="h-3 bg-hover rounded w-32"></div>
-          <div className="space-y-2">
-            <div className="h-4 bg-hover rounded"></div>
-            <div className="h-4 bg-hover rounded w-5/6"></div>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );

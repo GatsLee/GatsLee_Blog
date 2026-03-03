@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Settings, Trash2, Pencil, X, Check, FileText, MessageSquare, Users } from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
+import { Settings, Trash2, Pencil, X, Check, FileText, MessageSquare, Users, Pin } from "lucide-react";
 
 type Tab = "posts" | "comments" | "guestbook";
 
@@ -13,6 +12,8 @@ interface Post {
   slug: string;
   category: string;
   published: boolean;
+  pinned: boolean;
+  githubRepo: string;
   createdAt: string;
   _count: { comments: number };
 }
@@ -40,7 +41,10 @@ export default function AdminPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
   const [postCategoryFilter, setPostCategoryFilter] = useState<string>("all");
-  const { t } = useLanguage();
+  const [editingGithubId, setEditingGithubId] = useState<number | null>(null);
+  const [githubRepoValue, setGithubRepoValue] = useState("");
+
+  const tabLabels: Record<Tab, string> = { posts: "Posts", comments: "Comments", guestbook: "Guestbook" };
 
   useEffect(() => {
     if (activeTab === "posts") {
@@ -62,7 +66,7 @@ export default function AdminPage() {
   }, [activeTab]);
 
   const handleDelete = async (type: string, id: number) => {
-    if (!confirm(t("admin.confirm.delete"))) return;
+    if (!confirm("Are you sure you want to delete this?")) return;
 
     const urlMap: Record<string, string> = {
       posts: `/api/posts/${id}`,
@@ -88,6 +92,32 @@ export default function AdminPage() {
       setPosts((prev) =>
         prev.map((p) => (p.id === post.id ? { ...p, published: !p.published } : p))
       );
+    }
+  };
+
+  const handleTogglePin = async (post: Post) => {
+    const newPinned = !post.pinned;
+    const res = await fetch(`/api/posts/${post.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pinned: newPinned }),
+    });
+    if (res.ok) {
+      setPosts((prev) =>
+        prev.map((p) => ({ ...p, pinned: p.id === post.id ? newPinned : false }))
+      );
+    }
+  };
+
+  const handleSaveGithubRepo = async (id: number) => {
+    const res = await fetch(`/api/posts/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ githubRepo: githubRepoValue }),
+    });
+    if (res.ok) {
+      setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, githubRepo: githubRepoValue } : p)));
+      setEditingGithubId(null);
     }
   };
 
@@ -138,7 +168,7 @@ export default function AdminPage() {
       <div className="mb-8 pb-6 border-b border-border">
         <h1 className="text-3xl text-foreground font-bold flex items-center tracking-tight mb-2">
           <Settings className="mr-3" size={28} strokeWidth={1.5} />
-          {t("admin.title")}
+          Admin Dashboard
         </h1>
         <p className="text-sm text-muted ml-11">
           Manage your posts, comments, and guestbook entries
@@ -154,11 +184,11 @@ export default function AdminPage() {
             className={`px-6 py-3 text-sm font-medium transition-all rounded-lg cursor-pointer flex items-center gap-2 ${
               activeTab === tab
                 ? "bg-accent text-background shadow-lg shadow-accent/20"
-                : "bg-surface text-muted border border-border hover:border-accent hover:text-accent"
+                : "bg-surface text-muted card-border hover:border-accent hover:text-accent"
             }`}
           >
             {getTabIcon(tab)}
-            {t(`admin.tab.${tab}` as keyof typeof import("@/lib/i18n").translations)}
+            {tabLabels[tab]}
           </button>
         ))}
       </div>
@@ -168,14 +198,14 @@ export default function AdminPage() {
         <>
           {/* Category Filter Buttons */}
           <div className="flex gap-3 mb-6">
-            {["all", "devlog", "troubleshooting", "progress"].map((filter) => (
+            {["all", "devlog", "troubleshooting", "product", "agent", "blueprint"].map((filter) => (
               <button
                 key={filter}
                 onClick={() => setPostCategoryFilter(filter)}
                 className={`px-5 py-2.5 text-xs font-medium uppercase tracking-wider transition-all rounded-lg ${
                   postCategoryFilter === filter
                     ? "bg-accent text-background shadow-md"
-                    : "bg-background text-muted border border-border hover:border-accent hover:text-accent"
+                    : "bg-background text-muted card-border hover:border-accent hover:text-accent"
                 }`}
               >
                 {filter === "all" ? "All Posts" : filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -183,15 +213,16 @@ export default function AdminPage() {
             ))}
           </div>
 
-          <div className="bg-background border border-border rounded-xl overflow-hidden shadow-lg">
+          <div className="bg-background card-border rounded-xl overflow-hidden shadow-lg">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-muted text-xs font-mono uppercase bg-background">
-                  <th className="text-left p-4">{t("admin.posts.title")}</th>
-                  <th className="text-left p-4 hidden md:table-cell">{t("admin.posts.category")}</th>
-                  <th className="text-left p-4">{t("admin.posts.status")}</th>
-                  <th className="text-left p-4 hidden md:table-cell">{t("admin.posts.date")}</th>
-                  <th className="text-right p-4">{t("admin.posts.actions")}</th>
+                  <th className="text-left p-4">Title</th>
+                  <th className="text-left p-4 hidden md:table-cell">Category</th>
+                  <th className="text-left p-4">Status</th>
+                  <th className="text-left p-4 hidden lg:table-cell">GitHub</th>
+                  <th className="text-left p-4 hidden md:table-cell">Date</th>
+                  <th className="text-right p-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -207,16 +238,52 @@ export default function AdminPage() {
                         <span className="text-muted text-xs font-mono bg-surface px-2 py-1 rounded">{post.category}</span>
                       </td>
                       <td className="p-4">
-                        <button
-                          onClick={() => handleTogglePublish(post)}
-                          className={`text-xs font-mono px-3 py-1.5 rounded cursor-pointer transition-all ${
-                            post.published
-                              ? "bg-accent/20 text-accent border border-accent/30"
-                              : "bg-red-500/20 text-red-500 border border-red-500/30"
-                          }`}
-                        >
-                          {post.published ? t("admin.posts.published") : t("admin.posts.draft")}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleTogglePublish(post)}
+                            className={`text-xs font-mono px-3 py-1.5 rounded cursor-pointer transition-all ${
+                              post.published
+                                ? "bg-accent/20 text-accent border border-accent/30"
+                                : "bg-red-500/20 text-red-500 border border-red-500/30"
+                            }`}
+                          >
+                            {post.published ? "Published" : "Draft"}
+                          </button>
+                          <button
+                            onClick={() => handleTogglePin(post)}
+                            title={post.pinned ? "Unpin" : "Pin to home"}
+                            className={`p-1.5 rounded cursor-pointer transition-all ${
+                              post.pinned
+                                ? "text-amber-400 bg-amber-400/10"
+                                : "text-muted hover:text-amber-400 hover:bg-amber-400/10"
+                            }`}
+                          >
+                            <Pin size={12} strokeWidth={post.pinned ? 2.5 : 1.5} />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="p-4 hidden lg:table-cell">
+                        {editingGithubId === post.id ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="text"
+                              value={githubRepoValue}
+                              onChange={(e) => setGithubRepoValue(e.target.value)}
+                              placeholder="owner/repo"
+                              className="bg-background card-border rounded px-2 py-1 text-xs font-mono text-foreground focus:border-accent focus:outline-none w-32"
+                              autoFocus
+                            />
+                            <button onClick={() => handleSaveGithubRepo(post.id)} className="text-accent p-1 cursor-pointer"><Check size={12} /></button>
+                            <button onClick={() => setEditingGithubId(null)} className="text-muted p-1 cursor-pointer"><X size={12} /></button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => { setEditingGithubId(post.id); setGithubRepoValue(post.githubRepo ?? ""); }}
+                            className="text-xs font-mono text-muted hover:text-accent transition-colors cursor-pointer truncate max-w-[120px] block"
+                          >
+                            {post.githubRepo || <span className="opacity-40">set repo…</span>}
+                          </button>
+                        )}
                       </td>
                       <td className="p-4 hidden md:table-cell text-secondary text-xs font-mono">
                         {new Date(post.createdAt).toISOString().split("T")[0]}
@@ -226,14 +293,14 @@ export default function AdminPage() {
                           <Link
                             href={`/write/edit/${post.id}`}
                             className="text-muted hover:text-accent transition-colors p-2 hover:bg-surface rounded"
-                            title={t("admin.action.edit")}
+                            title="Edit"
                           >
                             <Pencil size={14} />
                           </Link>
                           <button
                             onClick={() => handleDelete("posts", post.id)}
                             className="text-muted hover:text-red-500 transition-colors cursor-pointer p-2 hover:bg-surface rounded"
-                            title={t("admin.action.delete")}
+                            title="Delete"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -245,8 +312,8 @@ export default function AdminPage() {
                   .filter((post) => postCategoryFilter === "all" || post.category === postCategoryFilter)
                   .length === 0 && (
                     <tr>
-                      <td colSpan={5} className="p-12 text-center text-secondary font-mono text-sm">
-                        {postCategoryFilter === "all" ? t("admin.empty") : `No ${postCategoryFilter} posts found.`}
+                      <td colSpan={6} className="p-12 text-center text-secondary font-mono text-sm">
+                        {postCategoryFilter === "all" ? "No items found" : `No ${postCategoryFilter} posts found.`}
                       </td>
                     </tr>
                   )}
@@ -258,14 +325,14 @@ export default function AdminPage() {
 
       {/* Comments Tab - Similar updates */}
       {activeTab === "comments" && (
-        <div className="bg-background border border-border rounded-xl overflow-hidden shadow-lg">
+        <div className="bg-background card-border rounded-xl overflow-hidden shadow-lg">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-muted text-xs font-mono uppercase bg-background">
-                <th className="text-left p-4">{t("admin.comments.author")}</th>
-                <th className="text-left p-4">{t("admin.comments.content")}</th>
-                <th className="text-left p-4 hidden md:table-cell">{t("admin.comments.post")}</th>
-                <th className="text-right p-4">{t("admin.posts.actions")}</th>
+                <th className="text-left p-4">Author</th>
+                <th className="text-left p-4">Content</th>
+                <th className="text-left p-4 hidden md:table-cell">Post</th>
+                <th className="text-right p-4">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -280,7 +347,7 @@ export default function AdminPage() {
                         type="text"
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
-                        className="w-full bg-background border border-border rounded px-3 py-2 text-foreground text-sm focus:border-accent focus:outline-none"
+                        className="w-full bg-background card-border rounded px-3 py-2 text-foreground text-sm focus:border-accent focus:outline-none"
                         autoFocus
                       />
                     ) : (
@@ -312,14 +379,14 @@ export default function AdminPage() {
                           <button
                             onClick={() => { setEditingId(comment.id); setEditValue(comment.content); }}
                             className="text-muted hover:text-accent transition-colors cursor-pointer p-2 hover:bg-surface rounded"
-                            title={t("admin.action.edit")}
+                            title="Edit"
                           >
                             <Pencil size={14} />
                           </button>
                           <button
                             onClick={() => handleDelete("comments", comment.id)}
                             className="text-muted hover:text-red-500 transition-colors cursor-pointer p-2 hover:bg-surface rounded"
-                            title={t("admin.action.delete")}
+                            title="Delete"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -332,7 +399,7 @@ export default function AdminPage() {
               {comments.length === 0 && (
                 <tr>
                   <td colSpan={4} className="p-12 text-center text-secondary font-mono text-sm">
-                    {t("admin.empty")}
+                    No items found
                   </td>
                 </tr>
               )}
@@ -343,14 +410,14 @@ export default function AdminPage() {
 
       {/* Guestbook Tab - Similar updates */}
       {activeTab === "guestbook" && (
-        <div className="bg-background border border-border rounded-xl overflow-hidden shadow-lg">
+        <div className="bg-background card-border rounded-xl overflow-hidden shadow-lg">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-muted text-xs font-mono uppercase bg-background">
-                <th className="text-left p-4">{t("admin.guestbook.author")}</th>
-                <th className="text-left p-4">{t("admin.guestbook.message")}</th>
-                <th className="text-left p-4 hidden md:table-cell">{t("admin.posts.date")}</th>
-                <th className="text-right p-4">{t("admin.posts.actions")}</th>
+                <th className="text-left p-4">Author</th>
+                <th className="text-left p-4">Message</th>
+                <th className="text-left p-4 hidden md:table-cell">Date</th>
+                <th className="text-right p-4">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -365,7 +432,7 @@ export default function AdminPage() {
                         type="text"
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
-                        className="w-full bg-background border border-border rounded px-3 py-2 text-foreground text-sm focus:border-accent focus:outline-none"
+                        className="w-full bg-background card-border rounded px-3 py-2 text-foreground text-sm focus:border-accent focus:outline-none"
                         autoFocus
                       />
                     ) : (
@@ -397,14 +464,14 @@ export default function AdminPage() {
                           <button
                             onClick={() => { setEditingId(entry.id); setEditValue(entry.message); }}
                             className="text-muted hover:text-accent transition-colors cursor-pointer p-2 hover:bg-surface rounded"
-                            title={t("admin.action.edit")}
+                            title="Edit"
                           >
                             <Pencil size={14} />
                           </button>
                           <button
                             onClick={() => handleDelete("guestbook", entry.id)}
                             className="text-muted hover:text-red-500 transition-colors cursor-pointer p-2 hover:bg-surface rounded"
-                            title={t("admin.action.delete")}
+                            title="Delete"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -417,7 +484,7 @@ export default function AdminPage() {
               {guestEntries.length === 0 && (
                 <tr>
                   <td colSpan={4} className="p-12 text-center text-secondary font-mono text-sm">
-                    {t("admin.empty")}
+                    No items found
                   </td>
                 </tr>
               )}

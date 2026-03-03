@@ -3,14 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 4000",
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3001",
-    "lint": "eslint",
-    "seed": "npx tsx prisma/seed.ts"
-  },
-  "prisma": {
-    "seed": "npx tsx prisma/seed.ts"
+    "lint": "eslint"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
@@ -22,7 +18,11 @@
     "next": "16.1.6",
     "prisma": "^6.19.2",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

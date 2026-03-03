@@ -2,8 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Save } from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
+import NotionEditor, { parseMarkdownToBlocks } from "@/components/editor/NotionEditor";
+import type { Block } from "@/components/editor/NotionEditor";
+import ProductEditor from "@/components/editor/ProductEditor";
+
+const ROUTE_MAP: Record<string, string> = {
+  product: "/products",
+  agent: "/products",
+  blueprint: "/blueprint",
+  devlog: "/insights",
+  troubleshooting: "/insights",
+};
 
 export default function EditPostPage({
   params,
@@ -11,14 +20,11 @@ export default function EditPostPage({
   params: Promise<{ id: string }>;
 }) {
   const [postId, setPostId] = useState<string>("");
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("devlog");
-  const [content, setContent] = useState("");
+  const [postData, setPostData] = useState<Record<string, unknown> | null>(null);
+  const [initialBlocks, setInitialBlocks] = useState<Block[] | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const router = useRouter();
-  const { t } = useLanguage();
 
   useEffect(() => {
     async function loadPost() {
@@ -29,44 +35,83 @@ export default function EditPostPage({
         const res = await fetch(`/api/posts/${id}`);
         if (res.ok) {
           const post = await res.json();
-          setTitle(post.title);
-          setCategory(post.category);
-          setContent(post.content);
-        } else {
-          setError("Post not found");
+          setPostData(post);
+          setInitialBlocks(parseMarkdownToBlocks(post.content || ""));
         }
       } catch {
-        setError(t("error.connection"));
+        /* ignore — editor opens with empty state */
       } finally {
         setLoading(false);
       }
     }
     loadPost();
-  }, [params, t]);
+  }, [params]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() || !content.trim()) return;
+  // Save handler for NotionEditor (devlog/troubleshooting)
+  const handleNotionSave = async (data: {
+    title: string;
+    category: string;
+    content: string;
+    slug?: string;
+    coverImage?: string;
+    description?: string;
+    locale?: string;
+    published?: boolean;
+  }) => {
+    if (!data.title.trim() || !data.content.trim()) return;
     setSaving(true);
-    setError("");
-
     try {
       const res = await fetch(`/api/posts/${postId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, category, content }),
+        body: JSON.stringify(data),
       });
-
       if (res.ok) {
         const post = await res.json();
-        router.push(`/devlogs/${post.slug}`);
+        const basePath = ROUTE_MAP[data.category] || "/insights";
+        router.push(`${basePath}/${post.slug}`);
         router.refresh();
-      } else {
-        const data = await res.json();
-        setError(data.error || t("write.error"));
       }
-    } catch {
-      setError(t("error.connection"));
+    } catch (error) {
+      console.error("Failed to save:", error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Save handler for ProductEditor (product/agent)
+  const handleProductSave = async (data: {
+    title: string;
+    category: string;
+    content: string;
+    slug?: string;
+    coverImage?: string;
+    description?: string;
+    locale?: string;
+    published?: boolean;
+    tags?: string;
+    demoVideo?: string;
+    demoImages?: string;
+    targetAudience?: string;
+    purpose?: string;
+    expectedEffect?: string;
+  }) => {
+    if (!data.title.trim()) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/posts/${postId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        const post = await res.json();
+        const basePath = ROUTE_MAP[data.category] || "/products";
+        router.push(`${basePath}/${post.slug}`);
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Failed to save:", error);
     } finally {
       setSaving(false);
     }
@@ -74,76 +119,64 @@ export default function EditPostPage({
 
   if (loading) {
     return (
-      <div className="max-w-3xl mx-auto animate-fadeIn">
-        <div className="text-[#8888a0] font-mono text-sm animate-pulse">Loading...</div>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+        <span className="text-muted font-mono text-sm animate-pulse">Loading…</span>
       </div>
     );
   }
 
+  if (!postData) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+        <span className="text-muted font-mono text-sm">Post not found</span>
+      </div>
+    );
+  }
+
+  const category = (postData.category as string) || "devlog";
+
+  // Blueprint posts are edited via the blueprint editor
+  if (category === "blueprint") {
+    router.push("/write/blueprint");
+    return null;
+  }
+
+  // Product/Agent → ProductEditor
+  if (category === "product" || category === "agent") {
+    return (
+      <ProductEditor
+        initialTitle={(postData.title as string) || ""}
+        initialCategory={category}
+        initialContent={(postData.content as string) || ""}
+        initialCoverImage={(postData.coverImage as string) || ""}
+        initialDemoVideo={(postData.demoVideo as string) || ""}
+        initialDemoImages={(postData.demoImages as string) || "[]"}
+        initialTargetAudience={(postData.targetAudience as string) || ""}
+        initialPurpose={(postData.purpose as string) || ""}
+        initialExpectedEffect={(postData.expectedEffect as string) || ""}
+        initialLocale={(postData.locale as string) || "ko"}
+        initialPublished={postData.published !== false}
+        initialTags={(postData.tags as string) || "[]"}
+        initialSlug={(postData.slug as string) || ""}
+        initialDescription={(postData.description as string) || ""}
+        onSave={handleProductSave}
+        saving={saving}
+      />
+    );
+  }
+
+  // Devlog/Troubleshooting → NotionEditor
   return (
-    <div className="max-w-3xl mx-auto animate-fadeIn w-full">
-      <h2 className="text-xl text-[#d4d4dc] mb-8 font-bold flex items-center tracking-tight">
-        <Save className="mr-2" size={20} /> {t("write.edit.title")}
-      </h2>
-
-      <form
-        onSubmit={handleSubmit}
-        className="bg-[#22223a] border border-[#2e2e4a] rounded-lg p-8 space-y-6"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-xs text-[#8888a0] mb-2 font-mono uppercase">
-              {t("write.filename")}
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-[#1a1a2e] border border-[#2e2e4a] rounded p-3 text-[#d4d4dc] focus:border-[#d4a054] focus:outline-none transition-colors placeholder-[#3a3a52]"
-              placeholder="e.g. protocol_v1.log"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-[#8888a0] mb-2 font-mono uppercase">
-              {t("write.category")}
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full bg-[#1a1a2e] border border-[#2e2e4a] rounded p-3 text-[#d4d4dc] focus:border-[#d4a054] focus:outline-none transition-colors"
-            >
-              <option value="devlog">{t("write.devlog")}</option>
-              <option value="troubleshooting">{t("write.troubleshooting")}</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs text-[#8888a0] mb-2 font-mono uppercase">
-            {t("write.content")}
-          </label>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full h-80 bg-[#1a1a2e] border border-[#2e2e4a] rounded p-4 text-[#b0b0bc] focus:border-[#d4a054] focus:outline-none transition-colors font-mono leading-relaxed placeholder-[#3a3a52]"
-            placeholder="Begin writing protocol..."
-          />
-        </div>
-
-        {error && (
-          <p className="text-[#e05555] text-xs font-mono">{error}</p>
-        )}
-
-        <div className="flex justify-end pt-4 border-t border-[#2e2e4a]">
-          <button
-            type="submit"
-            disabled={saving || !title.trim() || !content.trim()}
-            className="bg-[#d4a054] hover:bg-[#c49544] text-[#1a1a2e] font-bold py-3 px-8 text-sm transition-colors flex items-center uppercase tracking-wider rounded disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Save size={16} className="mr-2" />{" "}
-            {saving ? t("write.edit.updating") : t("write.edit.update")}
-          </button>
-        </div>
-      </form>
-    </div>
+    <NotionEditor
+      initialBlocks={initialBlocks}
+      initialCategory={category}
+      initialSlug={(postData.slug as string) || ""}
+      initialCoverImage={(postData.coverImage as string) || ""}
+      initialDescription={(postData.description as string) || ""}
+      initialLocale={(postData.locale as string) || "ko"}
+      initialPublished={postData.published !== false}
+      onSave={handleNotionSave}
+      saving={saving}
+    />
   );
 }

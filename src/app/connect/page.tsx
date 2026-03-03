@@ -1,0 +1,251 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import {
+  MessageSquare,
+  User,
+  Check,
+} from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
+
+interface GuestEntry {
+  id: number;
+  author: string;
+  message: string;
+  createdAt: string;
+}
+
+export default function ConnectPage() {
+  const [entries, setEntries] = useState<GuestEntry[]>([]);
+  const [input, setInput] = useState("");
+  const [name, setName] = useState("");
+  const [nameSet, setNameSet] = useState(false);
+  const [error, setError] = useState("");
+  const [showToast, setShowToast] = useState(false);
+  const [newEntryId, setNewEntryId] = useState<number | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
+
+  // Load saved name
+  useEffect(() => {
+    const savedName = localStorage.getItem("guestbook-name");
+    if (savedName) {
+      setName(savedName);
+      setNameSet(true);
+    }
+  }, []);
+
+  // Fetch entries
+  useEffect(() => {
+    fetch("/api/guestbook")
+      .then((r) => r.json())
+      .then(setEntries)
+      .catch(() => {});
+  }, []);
+
+  // Auto-scroll
+  useEffect(() => {
+    scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
+  }, [entries]);
+
+  const handleNameSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    const trimmed = input.trim().slice(0, 20);
+    setName(trimmed);
+    setNameSet(true);
+    localStorage.setItem("guestbook-name", trimmed);
+    setInput("");
+  };
+
+  const handleMessageSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+    setError("");
+
+    if (input.trim().startsWith("/name ")) {
+      const newName = input.trim().slice(6).slice(0, 20);
+      if (newName) {
+        setName(newName);
+        localStorage.setItem("guestbook-name", newName);
+        setInput("");
+        return;
+      }
+    }
+
+    try {
+      const res = await fetch("/api/guestbook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ author: name, message: input }),
+      });
+
+      if (res.status === 429) {
+        const data = await res.json();
+        setError(data.error || "Rate limit exceeded.");
+        return;
+      }
+
+      if (res.ok) {
+        const entry = await res.json();
+        setEntries((prev) => [...prev, entry]);
+        setInput("");
+        setNewEntryId(entry.id);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        setTimeout(() => setNewEntryId(null), 600);
+      }
+    } catch {
+      setError("CONNECTION ERROR");
+    }
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto animate-fadeIn">
+      {/* Toast notification */}
+      <div
+        className={`fixed top-6 right-6 z-50 transition-all duration-300 ${
+          showToast
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 -translate-y-4 pointer-events-none"
+        }`}
+      >
+        <div className="bg-accent text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 text-sm font-medium">
+          <Check size={16} />
+          {t.connect.messageSent}
+        </div>
+      </div>
+
+      {/* Hero CTA Section */}
+      <section className="mb-12">
+        <h1
+          className="text-3xl md:text-4xl text-foreground font-semibold tracking-tight mb-4"
+          style={{ fontFamily: "Archivo, sans-serif" }}
+        >
+          {t.connect.title}
+        </h1>
+        <p className="text-secondary text-lg leading-relaxed max-w-2xl">
+          {t.connect.heroText}
+        </p>
+      </section>
+
+      {/* Guestbook Section */}
+      <section>
+        <h2
+          className="text-xs uppercase tracking-[0.2em] text-muted font-semibold mb-6"
+          style={{ fontFamily: "Archivo, sans-serif" }}
+        >
+          {t.connect.guestbook}
+        </h2>
+
+        <div
+          className="flex flex-col bg-surface card-border rounded-lg overflow-hidden"
+          style={{ height: "500px" }}
+        >
+          {/* Messages */}
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+            {entries.map((entry) => (
+              <div
+                key={entry.id}
+                className={`group border-l-2 border-transparent hover:border-accent pl-6 py-3 transition-all duration-200 ${
+                  entry.id === newEntryId ? "animate-slideIn" : ""
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-hover text-muted">
+                    <User size={16} strokeWidth={1.5} />
+                  </div>
+                  <div className="flex items-baseline gap-3">
+                    <span className="font-semibold text-foreground text-sm">
+                      {entry.author}
+                    </span>
+                    <time className="text-xs text-muted">
+                      {new Date(entry.createdAt).toLocaleString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </time>
+                  </div>
+                </div>
+                <p className="text-secondary leading-relaxed pl-10">{entry.message}</p>
+              </div>
+            ))}
+
+            {entries.length === 0 && (
+              <div className="text-center py-12 text-muted">
+                <MessageSquare
+                  size={48}
+                  strokeWidth={1}
+                  className="mx-auto mb-4 opacity-30"
+                />
+                <p className="text-sm">{t.connect.empty}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Input Area */}
+          <div className="border-t border-border bg-background p-6">
+            {error && (
+              <div className="mb-4 px-4 py-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 rounded text-sm text-red-600 dark:text-red-400">
+                {error}
+              </div>
+            )}
+
+            {!nameSet ? (
+              <form onSubmit={handleNameSubmit} className="space-y-3">
+                <label className="text-sm font-medium text-foreground">
+                  {t.connect.namePlaceholder}:
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    maxLength={20}
+                    className="flex-1 px-4 py-3 bg-surface card-border rounded text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                    placeholder={t.connect.namePlaceholder}
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-foreground text-background font-medium rounded hover:bg-primary transition-all cursor-pointer"
+                  >
+                    Set Name
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleMessageSubmit} className="space-y-3">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <User size={16} strokeWidth={1.5} />
+                  {name}
+                  <span className="text-xs text-muted ml-2">
+                    /name [newname] to change
+                  </span>
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    className="flex-1 px-4 py-3 bg-surface card-border rounded text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+                    placeholder={t.connect.placeholder}
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-accent text-white font-medium rounded hover:bg-accent/90 transition-all cursor-pointer active:scale-95"
+                  >
+                    {t.connect.submit}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
