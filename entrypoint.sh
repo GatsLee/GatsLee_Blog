@@ -1,6 +1,12 @@
 #!/bin/sh
 set -e
 
+# Sync migrations from image to volume (volume mounts over /app/prisma)
+if [ -d /app/prisma-source/migrations ]; then
+  cp -r /app/prisma-source/migrations/* /app/prisma/migrations/ 2>/dev/null || true
+  cp /app/prisma-source/schema.prisma /app/prisma/schema.prisma 2>/dev/null || true
+fi
+
 DB_PATH="/app/prisma/blog.db"
 
 # Ensure the migrations table exists (idempotent)

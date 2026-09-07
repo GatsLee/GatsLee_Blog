@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+# blog — CLI for posting to blog.gatslee.com
+#
+# Setup (MacBook):
+#   cp blog ~/.local/bin/blog && chmod +x ~/.local/bin/blog
+#   mkdir -p ~/.config/blog
+#   cat > ~/.config/blog/config <<EOF
+#   BLOG_USERNAME=gatslee
+#   BLOG_PASSWORD=your_password
+#   EOF
+#   chmod 600 ~/.config/blog/config
+
+set -euo pipefail
+
+BLOG_URL="https://blog.gatslee.com"
+CONFIG_DIR="$HOME/.config/blog"
+TOKEN_FILE="$CONFIG_DIR/token"
+CONFIG_FILE="$CONFIG_DIR/config"
+
+mkdir -p "$CONFIG_DIR"
+chmod 700 "$CONFIG_DIR"
+
+[[ -f "$CONFIG_FILE" ]] && source "$CONFIG_FILE"
+BLOG_USERNAME="${BLOG_USERNAME:-}"
+BLOG_PASSWORD="${BLOG_PASSWORD:-}"
+
+_check_deps() {
+  for cmd in curl jq; do
+    command -v "$cmd" &>/dev/null || {
+      echo "Error: $cmd 없음 → brew install $cmd"
+      exit 1
+    }
+  done
+}
+
+_login() {
+  [[ -z "$BLOG_USERNAME" || -z "$BLOG_PASSWORD" ]] && {
+    echo "Error: $CONFIG_FILE 에 BLOG_USERNAME, BLOG_PASSWORD 설정 필요"
+    echo ""
+    echo "  mkdir -p ~/.config/blog"
+    echo "  cat > ~/.config/blog/config <<EOF"
+    echo "  BLOG_USERNAME=gatslee"
+    echo "  BLOG_PASSWORD=yourpassword"
+    echo "  EOF"
+    echo "  chmod 600 ~/.config/blog/config"
+    exit 1
+  }
+
+  RESPONSE=$(curl -sf -X POST "$BLOG_URL/api/auth/login" \
+    -H "Content-Type: application/json" \
+    -d "{\"username\":\"$BLOG_USERNAME\",\"password\":\"$BLOG_PASSWORD\"}" \
+    2>/dev/null) || { echo "Error: 서버 연결 실패"; exit 1; }
+
+  TOKEN=$(echo "$RESPONSE" | jq -r '.token // empty')
+  [[ -z "$TOKEN" ]] && { echo "Error: 로그인 실패 (자격증명 확인)"; exit 1; }
+
+  echo "$TOKEN" > "$TOKEN_FILE"
+  chmod 600 "$TOKEN_FILE"
+  echo "✓ 로그인 성공 (토큰 6일간 유효)"
+}
+
+_get_token() {
+  if [[ -f "$TOKEN_FILE" ]]; then
+    # macOS: stat -f %m / Linux: stat -c %Y
+    if stat -f %m "$TOKEN_FILE" &>/dev/null 2>&1; then
+      FILE_MTIME=$(stat -f %m "$TOKEN_FILE")
+    else
+      FILE_MTIME=$(stat -c %Y "$TOKEN_FILE")
+    fi
+    AGE=$(( $(date +%s) - FILE_MTIME ))
+    if [[ $AGE -lt 518400 ]]; then  # 6일 = 518400초
+      cat "$TOKEN_FILE"
+      return
+    fi
+  fi
+  # 토큰 만료 또는 없음 → 자동 재로그인
+  _login >/dev/null
+  cat "$TOKEN_FILE"
+}
+
+_post() {
+  local TITLE="" CATEGORY="journal" LOCALE="ko"
+  local PUBLISHED="true" DESCRIPTION="" FILE=""
+
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      --title|-t)    TITLE="$2";        shift 2 ;;
+      --category|-c) CATEGORY="$2";    shift 2 ;;
+      --locale|-l)   LOCALE="$2";      shift 2 ;;
+      --draft|-d)    PUBLISHED="false"; shift   ;;
+      --desc)        DESCRIPTION="$2"; shift 2 ;;
+      -*)            echo "Unknown option: $1"; _usage; exit 1 ;;
+      *)             FILE="$1";         shift   ;;
+    esac
+  done
+
+  # 내용 읽기
+  if [[ -n "$FILE" ]]; then
+    [[ ! -f "$FILE" ]] && { echo "Error: 파일 없음 → $FILE"; exit 1; }
+    CONTENT=$(cat "$FILE")
+  else
+    echo "(마크다운 입력 후 Ctrl+D)"
+    CONTENT=$(cat)
+  fi
+
+  # 파일 첫 번째 H1에서 제목 자동 추출
+  [[ -z "$TITLE" ]] && TITLE=$(printf '%s' "$CONTENT" | grep -m1 '^# ' | sed 's/^# //')
+  [[ -z "$TITLE" ]] && { echo "Error: --title 필요 (또는 파일 첫 줄 # 제목)"; exit 1; }
+
+  TOKEN=$(_get_token)
+
+  PAYLOAD=$(jq -n \
+    --arg title       "$TITLE" \
+    --arg content     "$CONTENT" \
+    --arg category    "$CATEGORY" \
+    --arg locale      "$LOCALE" \
+    --argjson published "$PUBLISHED" \
+    --arg description "$DESCRIPTION" \
+    '{
+      title: $title,
+      content: $content,
+      category: $category,
+      locale: $locale,
+      published: $published,
+      description: $description,
+      tags: "[]"
+    }')
+
+  RESPONSE=$(curl -sf -X POST "$BLOG_URL/api/posts" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "$PAYLOAD" \
+    2>/dev/null) || { echo "Error: 포스팅 실패 (서버 응답 없음)"; exit 1; }
+
+  SLUG=$(echo "$RESPONSE" | jq -r '.slug // empty')
+  [[ -z "$SLUG" ]] && {
+    echo "Error: 포스팅 실패"
+    echo "$RESPONSE" | jq '.'
+    exit 1
+  }
+
+  case "$CATEGORY" in
+    product|agent) URL_PATH="products" ;;
+    *)             URL_PATH="insights"  ;;
+  esac
+
+  echo "✓ 발행 완료: $BLOG_URL/$URL_PATH/$SLUG"
+}
+
+_usage() {
+  cat <<'EOF'
+Usage: blog <command> [options]
+
+Commands:
+  login               인증 및 토큰 캐싱 (~6일 유효, 만료 시 자동 갱신)
+  post [opts] [file]  포스트 발행
+
+Post options:
+  --title, -t TEXT    제목 (파일의 첫 번째 # H1 자동 추출 가능)
+  --category, -c TEXT case|journal|build|product|agent
+                      (기본: journal)
+  --locale, -l TEXT   ko|en (기본: ko)
+  --draft, -d         비공개 저장 (published=false)
+  --desc TEXT         SEO용 짧은 설명
+
+Examples:
+  blog login
+  blog post post.md
+  blog post --title "제목" --category journal post.md
+  blog post --draft --locale en post.md
+  echo "# 제목" | blog post
+EOF
+}
+
+_check_deps
+
+case "${1:-help}" in
+  login)    _login ;;
+  post)     shift; _post "$@" ;;
+  help|-h)  _usage ;;
+  *)        echo "Unknown command: $1"; echo ""; _usage; exit 1 ;;
+esac

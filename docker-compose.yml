@@ -6,11 +6,12 @@ services:
     container_name: blog
     restart: unless-stopped
     ports:
-      - "3001:3001"  # Temporary: Direct access for testing redesign
+      - "3001:3001"
     expose:
       - "3001"
     volumes:
       - blog-data:/app/prisma
+      - blog-uploads:/app/public/uploads
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /sys/class/thermal:/sys/class/thermal:ro
     environment:
@@ -18,17 +19,41 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - ADMIN_USERNAME=${ADMIN_USERNAME}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - HOSTNAME=0.0.0.0
+      - OLLAMA_URL=http://ollama:11434
+      - CHAT_MODEL=gemma4:e4b
+      - CHAT_RATE_LIMIT_PER_MINUTE=${CHAT_RATE_LIMIT_PER_MINUTE:-5}
+    depends_on:
+      - ollama
     networks:
-      - proxy-net  # Connect to NPM network
+      - proxy-net
+      - blog-internal
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: blog-ollama
+    restart: unless-stopped
+    volumes:
+      - /usr/share/ollama/.ollama:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=2m
+      - OLLAMA_MAX_QUEUE=3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - blog-internal
 
 networks:
   proxy-net:
-    external: true  # Use existing NPM network
-  default:
+    external: true
+  blog-internal:
     driver: bridge
 
 volumes:
   blog-data:
+  blog-uploads:

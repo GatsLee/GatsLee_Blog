@@ -48,3 +48,5 @@ dev.db
 # docker volumes & traefik
 traefik/
 acme.json
+# test artifacts
+tests/reports/
