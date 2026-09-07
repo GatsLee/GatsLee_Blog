@@ -1,25 +1,40 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
+
+:root {
+  --th-background: #FFFFFF;
+  --th-foreground: #0A0A0A;
+  --th-primary: #0A0A0A;
+  --th-secondary: #71717A;
+  --th-accent: #0A0A0A;
+  --th-surface: #FAFAFA;
+  --th-border: #E5E5E5;
+  --th-border-strong: #D4D4D8;
+  --th-muted: #A1A1AA;
+  --th-hover: #F5F5F5;
+  --grid-line: rgba(0, 0, 0, 0.1);
+}
 
 @theme inline {
   /* Typography */
-  --font-heading: 'Archivo', 'Pretendard', sans-serif;
-  --font-body: 'Space Grotesk', 'Pretendard', sans-serif;
+  --font-heading: 'Manrope', 'Pretendard', sans-serif;
+  --font-body: 'Inter', 'Pretendard', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
-  /* Theme-aware colors for Tailwind */
-  --color-background: light-dark(#FAFAFA, #09090B);
-  --color-foreground: light-dark(#09090B, #FAFAFA);
-  --color-primary: light-dark(#18181B, #E4E4E7);
-  --color-secondary: light-dark(#3F3F46, #A1A1AA);
-  --color-accent: light-dark(#2563EB, #3B82F6);
-  --color-surface: light-dark(#FFFFFF, #18181B);
-  --color-border: light-dark(#E4E4E7, #27272A);
-  --color-border-strong: light-dark(#D4D4D8, #3F3F46);
-  --color-muted: #71717A;
-  --color-hover: light-dark(#F4F4F5, #27272A);
+  /* Colors — reference theme vars so dark mode class toggle works */
+  --color-background: var(--th-background);
+  --color-foreground: var(--th-foreground);
+  --color-primary: var(--th-primary);
+  --color-secondary: var(--th-secondary);
+  --color-accent: var(--th-accent);
+  --color-surface: var(--th-surface);
+  --color-border: var(--th-border);
+  --color-border-strong: var(--th-border-strong);
+  --color-muted: var(--th-muted);
+  --color-hover: var(--th-hover);
 
-  /* Minimal animations */
+  /* Animations */
   --animate-fadeIn: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 
   @keyframes fadeIn {
@@ -28,50 +43,47 @@
   }
 }
 
-/* Light Theme (Default) */
-:root,
-:root.light {
-  --color-background: #FAFAFA;
-  --color-foreground: #09090B;
-  --color-primary: #18181B;
-  --color-secondary: #3F3F46;
-  --color-accent: #2563EB;
-  --color-surface: #FFFFFF;
-  --color-border: #E4E4E7;
-  --color-border-strong: #D4D4D8;
-  --color-muted: #71717A;
-  --color-hover: #F4F4F5;
-}
-
 /* Dark Theme */
 :root.dark {
-  --color-background: #09090B;
-  --color-foreground: #FAFAFA;
-  --color-primary: #E4E4E7;
-  --color-secondary: #A1A1AA;
-  --color-accent: #3B82F6;
-  --color-surface: #18181B;
-  --color-border: #27272A;
-  --color-border-strong: #3F3F46;
-  --color-muted: #71717A;
-  --color-hover: #27272A;
+  --th-background: #0A0A0A;
+  --th-foreground: #FAFAFA;
+  --th-primary: #FAFAFA;
+  --th-secondary: #A1A1AA;
+  --th-accent: #FAFAFA;
+  --th-surface: #141414;
+  --th-border: #262626;
+  --th-border-strong: #3F3F46;
+  --th-muted: #71717A;
+  --th-hover: #1A1A1A;
+  --grid-line: rgba(255, 255, 255, 0.1);
 }
 
 /* Tailwind theme colors mapping */
 @layer base {
-  * {
-    @apply border-border;
+  *,
+  *::before,
+  *::after {
+    border-color: var(--color-border);
+    border-style: solid;
+    border-width: 0;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
 
-/* Base styles - Swiss minimalism */
+/* Base styles — Editorial */
 body {
   background-color: var(--color-background);
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 60px 60px;
+  background-attachment: fixed;
   color: var(--color-foreground);
-  font-family: 'Space Grotesk', 'Pretendard', sans-serif;
+  font-family: 'Inter', 'Pretendard', sans-serif;
+  font-weight: 300;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -79,8 +91,8 @@ body {
 
 /* Selection */
 ::selection {
-  background: var(--color-accent);
-  color: var(--color-surface);
+  background: var(--color-foreground);
+  color: var(--color-background);
 }
 
 /* Minimal Scrollbar */
@@ -89,9 +101,9 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--color-border); }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-border-strong); }
 
-/* Uniform card border — single shorthand guarantees identical color on all sides */
+/* Card border — sharp corners */
 .card-border {
-  border: 1px solid var(--color-border);
+  border-width: 1px !important;
 }
 
 /* Fade-in animation utility */
@@ -99,7 +111,22 @@ body {
   animation: var(--animate-fadeIn);
 }
 
-/* Slide-in animation for Connect page */
+/* Wave animation for greeting emoji */
+@keyframes wave {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  30% { transform: rotate(14deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+}
+.animate-wave {
+  display: inline-block;
+  transform-origin: 70% 70%;
+  animation: wave 2.5s ease-in-out infinite;
+}
+
+/* Slide-in animation */
 @keyframes slideIn {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
@@ -108,68 +135,41 @@ body {
   animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Pawn pulse animation for boot sequence */
-@keyframes pawnPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.08); }
-}
-.animate-pawnPulse {
-  animation: pawnPulse 1.2s ease-in-out infinite;
+/* Chat widget — prevent body scroll on mobile when open */
+body.chat-open {
+  overflow: hidden;
 }
 
-/* Swiss grid utilities */
-.swiss-grid {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 1.5rem;
+/* Editorial label utility */
+.editorial-label {
+  font-family: 'JetBrains Mono', 'Pretendard', monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 500;
 }
 
-/* 8px grid system - precision spacing */
-.gap-grid-1 { gap: 8px; }
-.gap-grid-2 { gap: 16px; }
-.gap-grid-3 { gap: 24px; }
-.gap-grid-4 { gap: 32px; }
-.gap-grid-5 { gap: 40px; }
-.gap-grid-6 { gap: 48px; }
-.gap-grid-7 { gap: 56px; }
-.gap-grid-8 { gap: 64px; }
+/* Editorial image — grayscale with hover color */
+.editorial-img {
+  filter: grayscale(100%) brightness(95%) contrast(1.05);
+  transition: filter 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.editorial-img:hover,
+.group:hover .editorial-img {
+  filter: grayscale(0) brightness(100%) contrast(1);
+}
 
-.p-grid-1 { padding: 8px; }
-.p-grid-2 { padding: 16px; }
-.p-grid-3 { padding: 24px; }
-.p-grid-4 { padding: 32px; }
-.p-grid-5 { padding: 40px; }
-.p-grid-6 { padding: 48px; }
-
-.m-grid-1 { margin: 8px; }
-.m-grid-2 { margin: 16px; }
-.m-grid-3 { margin: 24px; }
-.m-grid-4 { margin: 32px; }
-.m-grid-5 { margin: 40px; }
-.m-grid-6 { margin: 48px; }
+/* Tonal transition */
+.tonal-transition {
+  transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+}
 
 /* Typography hierarchy */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Archivo', 'Pretendard', sans-serif;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-
-/* Mermaid diagram overrides */
-.mermaid-container svg {
-  max-width: 100%;
-  height: auto;
-}
-
-.mermaid-container .edgeLabel {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 11px;
-}
-
-.mermaid-container .cluster rect {
-  rx: 4;
-  ry: 4;
+  font-family: 'Manrope', 'Pretendard', sans-serif;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
 }
 
 /* Line clamp */
@@ -187,68 +187,195 @@ h1, h2, h3, h4, h5, h6 {
   overflow: hidden;
 }
 
-/* Markdown Editor Custom Styles - Swiss Minimalism */
+/* Mermaid diagram overrides */
+.mermaid-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.mermaid-container .edgeLabel {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+}
+
+.mermaid-container .cluster rect {
+  rx: 0;
+  ry: 0;
+}
+
+/* Markdown Editor Custom Styles — theme-aware */
 .w-md-editor {
-  background-color: #FFFFFF !important;
-  border: 1px solid #E4E4E7 !important;
-  color: #09090B !important;
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  color: var(--color-foreground) !important;
 }
 
 .w-md-editor-toolbar {
-  background-color: #FAFAFA !important;
-  border-bottom: 1px solid #E4E4E7 !important;
+  background-color: var(--color-background) !important;
+  border-bottom: 1px solid var(--color-border) !important;
 }
 
 .w-md-editor-toolbar button {
-  color: #71717A !important;
+  color: var(--color-muted) !important;
 }
 
 .w-md-editor-toolbar button:hover {
-  color: #2563EB !important;
-  background-color: #F4F4F5 !important;
+  color: var(--color-foreground) !important;
+  background-color: var(--color-hover) !important;
 }
 
 .w-md-editor-text,
 .w-md-editor-text-pre {
-  background-color: #FFFFFF !important;
-  color: #18181B !important;
-  font-family: 'Space Grotesk', sans-serif !important;
-  font-size: 15px !important;
+  background-color: var(--color-surface) !important;
+  color: var(--color-primary) !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 14px !important;
   line-height: 1.6 !important;
 }
 
 .w-md-editor-preview {
-  background-color: #FFFFFF !important;
-  color: #18181B !important;
+  background-color: var(--color-surface) !important;
+  color: var(--color-primary) !important;
 }
 
 .w-md-editor-preview h1,
 .w-md-editor-preview h2,
 .w-md-editor-preview h3 {
-  color: #09090B !important;
-  font-family: 'Archivo', sans-serif !important;
+  color: var(--color-foreground) !important;
+  font-family: 'Manrope', sans-serif !important;
 }
 
 .w-md-editor-preview code {
-  background-color: #F4F4F5 !important;
-  color: #2563EB !important;
+  background-color: var(--color-hover) !important;
+  color: var(--color-foreground) !important;
   padding: 2px 6px !important;
-  border-radius: 3px !important;
+  border-radius: 0 !important;
 }
 
 .w-md-editor-preview pre {
-  background-color: #FAFAFA !important;
-  border: 1px solid #E4E4E7 !important;
+  background-color: var(--color-background) !important;
+  border: 1px solid var(--color-border) !important;
 }
 
 .w-md-editor-preview a {
-  color: #2563EB !important;
+  color: var(--color-foreground) !important;
+  text-decoration: underline;
 }
 
 .w-md-editor-preview strong {
-  color: #09090B !important;
+  color: var(--color-foreground) !important;
 }
 
 .w-md-editor-preview em {
-  color: #3F3F46 !important;
+  color: var(--color-secondary) !important;
+}
+
+/* ─────────── Chat widget ─────────── */
+.chat-handle {
+  width: 40px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-border-strong);
+  margin: 8px auto 4px;
+}
+
+/* Chat assistant — left accent bar (no border bubble) */
+.chat-assistant-bar {
+  border-left: 1px solid var(--color-border-strong);
+  padding-left: 0.75rem;
+}
+
+/* Chat — markdown overrides (smaller, tighter than full article) */
+.prose-chat p { margin: 0.4em 0; line-height: 1.65; }
+.prose-chat ul, .prose-chat ol { margin: 0.5em 0; padding-left: 1.25em; }
+.prose-chat li { margin: 0.2em 0; line-height: 1.55; }
+.prose-chat code:not(pre code) {
+  background: var(--color-hover);
+  color: var(--color-foreground);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  font-size: 0.85em;
+  border: none;
+}
+.prose-chat pre {
+  margin: 0.6em 0;
+  font-size: 0.8em;
+}
+.prose-chat h1,
+.prose-chat h2,
+.prose-chat h3 {
+  font-size: 0.95em;
+  margin: 0.8em 0 0.3em;
+  font-weight: 600;
+}
+.prose-chat a {
+  color: var(--color-foreground);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ─── Print — /resume is the source of truth for the PDF ──────────────────
+   Cmd-P on /resume must produce a clean A4 document regardless of the theme
+   the visitor happens to be in. Three things fight us here:
+   1. the dark class survives printing, so force the theme vars back to light
+      (`:root.dark` outranks `:root`, so both selectors must be listed)
+   2. body carries a grid background-image that prints as a gray mesh
+   3. nav / footer / chat widget would otherwise land in the PDF            */
+@media print {
+  :root,
+  :root.dark {
+    --th-background: #ffffff;
+    --th-foreground: #000000;
+    --th-primary: #000000;
+    --th-secondary: #333333;
+    --th-accent: #000000;
+    --th-surface: #ffffff;
+    --th-border: #cccccc;
+    --th-border-strong: #999999;
+    --th-muted: #555555;
+    --th-hover: #ffffff;
+    --grid-line: transparent;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    background-image: none !important;
+  }
+
+  nav,
+  footer,
+  .no-print {
+    display: none !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 14mm 15mm;
+  }
+
+  .resume-doc {
+    font-size: 10.5pt;
+    line-height: 1.45;
+    max-width: none;
+  }
+
+  /* Never split a section across a page boundary. */
+  .resume-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .resume-doc a {
+    text-decoration: none;
+    color: #000;
+  }
+
+  /* Links can't be clicked on paper — print the destination. */
+  .resume-doc a[data-print-url]::after {
+    content: " (" attr(href) ")";
+    font-size: 8.5pt;
+    color: #555;
+  }
 }

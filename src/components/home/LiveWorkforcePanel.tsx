@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Box, Bot } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
 interface PostCard {
@@ -35,9 +35,7 @@ function StatusDot({ status }: { status: string | null }) {
     deployed: "bg-green-500",
   };
   return (
-    <span
-      className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${colors[status ?? ""] ?? "bg-muted"}`}
-    />
+    <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${colors[status ?? ""] ?? "bg-muted"}`} />
   );
 }
 
@@ -46,13 +44,20 @@ function CardRow({ post }: { post: PostCard }) {
   return (
     <Link
       href={`/products/${post.slug}`}
-      className="flex items-center gap-2.5 py-2 group"
+      className="flex items-center gap-3 py-4 border-b border-border group transition-colors hover:bg-hover px-2 -mx-2"
     >
       <StatusDot status={status} />
-      <span className="text-xs text-foreground group-hover:text-accent transition-colors truncate flex-1 font-mono">
+      <span className="text-sm text-foreground group-hover:text-foreground transition-colors truncate flex-1 font-medium">
         {post.title}
       </span>
-      <ArrowRight size={10} strokeWidth={2} className="text-muted group-hover:text-accent transition-colors shrink-0" />
+      {status && (
+        <span className="editorial-label text-muted shrink-0">{status}</span>
+      )}
+      <ArrowRight
+        size={14}
+        strokeWidth={1.5}
+        className="text-muted group-hover:translate-x-1 transition-transform shrink-0"
+      />
     </Link>
   );
 }
@@ -61,62 +66,42 @@ export default function LiveWorkforcePanel({ products, agents }: LiveWorkforcePa
   const { t } = useLanguage();
 
   return (
-    <section>
-      <div className="flex items-center gap-2 mb-4">
-        <Box size={16} className="text-accent" strokeWidth={1.5} />
-        <h2
-          className="text-xs uppercase tracking-[0.2em] text-muted font-semibold"
-          style={{ fontFamily: "Archivo, sans-serif" }}
-        >
-          {t.home.workforce}
-        </h2>
+    <div>
+      <div className="mb-12 flex items-end justify-between border-b border-border pb-6">
+        <div>
+          <h2 className="font-heading text-3xl md:text-4xl font-extrabold tracking-tight">{t.home.workforce}</h2>
+          <p className="text-secondary mt-2 text-base font-light">Active products and agents.</p>
+        </div>
+        <Link href="/products" className="editorial-label font-bold text-foreground hover:opacity-60 transition-opacity">
+          {t.home.seeAll}
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
         {/* Products */}
-        <div className="bg-surface card-border rounded-lg p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Box size={12} strokeWidth={1.5} className="text-blue-400" />
-              <span className="text-[10px] uppercase tracking-[0.15em] text-muted font-semibold">
-                {t.home.workforceProducts}
-              </span>
+        <div>
+          <h3 className="editorial-label font-bold text-foreground mb-4">{t.home.workforceProducts}</h3>
+          {products.length === 0 ? (
+            <p className="editorial-label text-muted">No products yet.</p>
+          ) : (
+            <div>
+              {products.map((p) => <CardRow key={p.id} post={p} />)}
             </div>
-            <Link href="/products" className="text-[10px] text-muted hover:text-accent transition-colors font-mono">
-              {t.home.seeAll}
-            </Link>
-          </div>
-          <div className="divide-y divide-border">
-            {products.length === 0 ? (
-              <p className="text-xs text-muted font-mono py-2">No products yet.</p>
-            ) : (
-              products.map((p) => <CardRow key={p.id} post={p} />)
-            )}
-          </div>
+          )}
         </div>
 
         {/* Agents */}
-        <div className="bg-surface card-border rounded-lg p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Bot size={12} strokeWidth={1.5} className="text-purple-400" />
-              <span className="text-[10px] uppercase tracking-[0.15em] text-muted font-semibold">
-                {t.home.workforceAgents}
-              </span>
+        <div>
+          <h3 className="editorial-label font-bold text-foreground mb-4">{t.home.workforceAgents}</h3>
+          {agents.length === 0 ? (
+            <p className="editorial-label text-muted">No agents yet.</p>
+          ) : (
+            <div>
+              {agents.map((a) => <CardRow key={a.id} post={a} />)}
             </div>
-            <Link href="/products" className="text-[10px] text-muted hover:text-accent transition-colors font-mono">
-              {t.home.seeAll}
-            </Link>
-          </div>
-          <div className="divide-y divide-border">
-            {agents.length === 0 ? (
-              <p className="text-xs text-muted font-mono py-2">No agents yet.</p>
-            ) : (
-              agents.map((a) => <CardRow key={a.id} post={a} />)
-            )}
-          </div>
+          )}
         </div>
       </div>
-    </section>
+    </div>
   );
 }

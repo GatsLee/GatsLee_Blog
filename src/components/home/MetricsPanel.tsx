@@ -1,40 +1,13 @@
 "use client";
 
-import { Server } from "lucide-react";
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useLanguage } from "@/context/LanguageContext";
-
-function useCountUp(target: number, duration = 800, decimals = 0) {
-  const [value, setValue] = useState(0);
-  const prevTarget = useRef(0);
-  useEffect(() => {
-    if (target === prevTarget.current) return;
-    const start = prevTarget.current;
-    prevTarget.current = target;
-    const startTime = performance.now();
-    const step = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      // ease-out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(start + (target - start) * eased);
-      if (progress < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }, [target, duration]);
-  return decimals > 0 ? Number(value.toFixed(decimals)) : Math.round(value);
-}
-
-function CountUpDisplay({ value, suffix = "", decimals = 0 }: { value: number; suffix?: string; decimals?: number }) {
-  const animated = useCountUp(value, 800, decimals);
-  return <>{animated}{suffix}</>;
-}
-
 
 interface ServerStatus {
   cpu: { model: string; cores: number; temperature: number | null };
   memory: { total: number; used: number; percentage: string };
   disk: { used: string; total: string; percentage: string };
+  gpu: { name: string; vramUsed: number; vramTotal: number } | null;
   uptime: number;
   containers: { name: string; status: string }[];
   kernel: string;
@@ -43,8 +16,8 @@ interface ServerStatus {
 function formatUptime(s: number) {
   const d = Math.floor(s / 86400);
   const h = Math.floor((s % 86400) / 3600);
+  if (d > 0) return `${d}d ${String(h).padStart(2, "0")}h`;
   const m = Math.floor((s % 3600) / 60);
-  if (d > 0) return `${d}d ${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m`;
   return `${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m`;
 }
 
@@ -53,19 +26,61 @@ function formatBytes(b: number) {
   return gb >= 1 ? `${gb.toFixed(1)}GB` : `${(b / (1024 ** 2)).toFixed(0)}MB`;
 }
 
-function AnimatedGauge({ percentage }: { percentage: number }) {
-  const animatedPct = useCountUp(percentage, 800);
-  const color = percentage >= 80 ? "bg-red-500" : percentage >= 60 ? "bg-amber-500" : "bg-accent";
+function ProgressBar({ label, value, max, unit }: { label: string; value: string; max: string; unit?: string; }) {
+  const [animated, setAnimated] = useState(false);
+  const parseVal = (v: string) => parseFloat(v.replace(/[^0-9.]/g, ""));
+  const numVal = parseVal(value);
+  const numMax = parseVal(max);
+  const pct = numMax > 0 ? Math.min((numVal / numMax) * 100, 100) : 0;
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimated(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="mt-1.5 space-y-1">
-      <div className="h-2 bg-hover rounded-full overflow-hidden">
-        <div className={`h-full ${color} rounded-full transition-all duration-500`} style={{ width: `${animatedPct}%` }} />
+    <div className="flex-1 min-w-[140px]">
+      <div className="flex items-baseline justify-between mb-1.5">
+        <span className="editorial-label text-muted">{label}</span>
+        <span className="font-mono text-xs text-foreground">{value} / {max}{unit ? ` ${unit}` : ""}</span>
       </div>
-      <span className="text-[10px] text-muted font-mono block text-right">{animatedPct}%</span>
+      <div className="w-full h-1.5 bg-border rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-1000 ease-out"
+          style={{
+            width: animated ? `${pct}%` : "0%",
+            backgroundColor: pct > 90 ? "#ef4444" : pct > 70 ? "#f59e0b" : "var(--color-foreground)",
+          }}
+        />
+      </div>
+      <span className="font-mono text-[10px] text-muted mt-0.5 block">{pct.toFixed(0)}%</span>
     </div>
   );
 }
 
+function CpuTempIndicator({ temp }: { temp: number }) {
+  // normal: < 60, warning: 60-80, danger: > 80
+  const level = temp > 80 ? "danger" : temp > 60 ? "warning" : "normal";
+  const colors = {
+    normal: { dot: "bg-green-500", label: "Normal", text: "text-green-600" },
+    warning: { dot: "bg-amber-500", label: "Warm", text: "text-amber-600" },
+    danger: { dot: "bg-red-500 animate-pulse", label: "Hot", text: "text-red-600" },
+  };
+  const cfg = colors[level];
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex items-baseline gap-2">
+        <span className="editorial-label text-muted">CPU TEMP</span>
+        <span className="font-mono text-sm text-foreground font-medium">{temp.toFixed(1)}°C</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className={`w-2.5 h-2.5 rounded-full ${cfg.dot}`} />
+        <span className={`font-mono text-[10px] font-medium ${cfg.text}`}>{cfg.label}</span>
+      </div>
+    </div>
+  );
+}
 
 export default function MetricsPanel() {
   const { t } = useLanguage();
@@ -84,72 +99,73 @@ export default function MetricsPanel() {
     return () => clearInterval(id);
   }, [fetchStatus]);
 
-  const ramPct = status ? Math.round((status.memory.used / status.memory.total) * 100) : 0;
-  const diskPct = status ? parseInt(status.disk.percentage) || 0 : 0;
-
-  const serverMetrics = status
-    ? [
-        { label: "UPTIME",     value: formatUptime(status.uptime) },
-        { label: "CONTAINERS", value: `${status.containers.length} active`, countTarget: status.containers.length },
-        { label: "RAM",        value: `${formatBytes(status.memory.used)} / ${formatBytes(status.memory.total)}`, gauge: ramPct },
-        { label: "DISK",       value: `${status.disk.used} / ${status.disk.total}`, gauge: diskPct },
-        ...(status.cpu.temperature !== null
-          ? [{ label: "CPU TEMP", value: "", temperature: status.cpu.temperature }]
-          : []),
-        { label: "KERNEL",     value: status.kernel },
-      ] as { label: string; value: string; gauge?: number; temperature?: number; countTarget?: number }[]
-    : null;
+  if (!status) {
+    return (
+      <div className="flex items-center gap-3">
+        <span className="editorial-label text-muted">{t.metrics.homeServer}</span>
+        <span className="editorial-label text-muted animate-pulse">connecting...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-surface card-border rounded-lg p-6 transition-colors h-full">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between pb-3">
-          <div className="flex items-center gap-3">
-            <Server className="text-accent" size={16} strokeWidth={1.5} />
-            <h3 className="text-xs uppercase tracking-[0.2em] text-muted font-semibold" style={{ fontFamily: "Archivo, sans-serif" }}>
-              {t.metrics.homeServer}
-            </h3>
-          </div>
-          <span className="flex items-center gap-1.5 text-[10px] text-muted font-mono">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            live
-          </span>
-        </div>
-
-        {!serverMetrics ? (
-          <div className="text-muted text-xs animate-pulse font-mono">connecting...</div>
-        ) : (
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-            {serverMetrics.map((item, i) => (
-              <div key={i} className="space-y-1">
-                <span className="text-[10px] text-muted uppercase tracking-wider font-medium block">{item.label}</span>
-                <span className="text-sm text-foreground font-mono font-semibold block">
-                  {item.temperature !== undefined ? (
-                    <CountUpDisplay value={item.temperature} decimals={1} suffix="°C" />
-                  ) : item.countTarget !== undefined ? (
-                    <><CountUpDisplay value={item.countTarget} /> {item.value.replace(/^\d+\s*/, "")}</>
-                  ) : (
-                    item.value
-                  )}
-                </span>
-                {item.gauge !== undefined && item.gauge > 0 && (
-                  <AnimatedGauge percentage={item.gauge} />
-                )}
-                {item.temperature !== undefined && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <span className={`w-1.5 h-1.5 rounded-full ${
-                      item.temperature >= 80 ? 'bg-red-500' : item.temperature >= 60 ? 'bg-amber-500' : 'bg-green-500'
-                    }`} />
-                    <span className="text-[9px] text-muted font-mono">
-                      {item.temperature < 60 ? 'normal' : item.temperature < 80 ? 'warm' : 'hot'}
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+    <div>
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <span className="editorial-label font-bold text-foreground">{t.metrics.homeServer}</span>
+        <span className="flex items-center gap-1.5 editorial-label text-muted">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+          live
+        </span>
       </div>
+
+      {/* UPTIME */}
+      <div className="flex items-baseline gap-2 mb-4">
+        <span className="editorial-label text-muted">UPTIME</span>
+        <span className="font-mono text-sm text-foreground font-medium">{formatUptime(status.uptime)}</span>
+      </div>
+
+      {/* CPU TEMP */}
+      {status.cpu.temperature !== null && (
+        <div className="mb-4">
+          <CpuTempIndicator temp={status.cpu.temperature} />
+        </div>
+      )}
+
+      {/* CONTAINERS */}
+      <div className="flex items-baseline gap-2 mb-4">
+        <span className="editorial-label text-muted">CONTAINERS</span>
+        <span className="font-mono text-sm text-foreground font-medium">{status.containers.length} active</span>
+      </div>
+
+      {/* RAM */}
+      <div className="mb-4">
+        <ProgressBar
+          label="RAM"
+          value={formatBytes(status.memory.used)}
+          max={formatBytes(status.memory.total)}
+        />
+      </div>
+
+      {/* DISK */}
+      <div className="mb-4">
+        <ProgressBar
+          label="DISK"
+          value={status.disk.used}
+          max={status.disk.total}
+        />
+      </div>
+
+      {/* VRAM */}
+      {status.gpu && (
+        <div>
+          <ProgressBar
+            label="VRAM"
+            value={`${(status.gpu.vramUsed / 1024).toFixed(1)}GB`}
+            max={`${(status.gpu.vramTotal / 1024).toFixed(1)}GB`}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import BootSequence from "@/components/home/BootSequence";
 import HomeContent from "@/components/home/HomeContent";
 import { prisma } from "@/lib/db";
 import { fetchRecentCommits } from "@/lib/github";
@@ -38,6 +37,32 @@ async function getRecentProducts() {
   }
 }
 
+async function getBuildTimeline() {
+  try {
+    const posts = await prisma.post.findMany({
+      where: { published: true, category: "build" },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        category: true,
+        description: true,
+        tags: true,
+        relatedPosts: true,
+        createdAt: true,
+      },
+    });
+    return posts.map((p) => ({
+      ...p,
+      createdAt: p.createdAt.toISOString(),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 async function getRecentAgents() {
   try {
     const posts = await prisma.post.findMany({
@@ -53,10 +78,11 @@ async function getRecentAgents() {
 }
 
 export default async function HomePage() {
-  const [pinnedPost, products, agents] = await Promise.all([
+  const [pinnedPost, products, agents, buildTimeline] = await Promise.all([
     getPinnedPost(),
     getRecentProducts(),
     getRecentAgents(),
+    getBuildTimeline(),
   ]);
 
   let commits: GitCommit[] = [];
@@ -65,14 +91,13 @@ export default async function HomePage() {
   }
 
   return (
-    <BootSequence>
-      <HomeContent
-        commits={commits}
-        repoName={pinnedPost?.githubRepo ?? ""}
-        pinnedPost={pinnedPost}
-        products={products}
-        agents={agents}
-      />
-    </BootSequence>
+    <HomeContent
+      commits={commits}
+      repoName={pinnedPost?.githubRepo ?? ""}
+      pinnedPost={pinnedPost}
+      products={products}
+      agents={agents}
+      buildTimeline={buildTimeline}
+    />
   );
 }

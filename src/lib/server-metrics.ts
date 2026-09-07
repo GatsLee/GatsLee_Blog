@@ -17,6 +17,11 @@ export interface ServerMetrics {
     total: string;
     percentage: string;
   };
+  gpu: {
+    name: string;
+    vramUsed: number;  // MB
+    vramTotal: number; // MB
+  } | null;
   uptime: number;
   containers: { name: string; status: string }[];
   kernel: string;
@@ -76,6 +81,25 @@ export function getServerMetrics(): ServerMetrics {
     // Windows or error
   }
 
+  // GPU VRAM via nvidia-smi (through ollama container)
+  let gpu: ServerMetrics["gpu"] = null;
+  try {
+    const gpuOutput = execSync(
+      "docker exec blog-ollama nvidia-smi --query-gpu=name,memory.used,memory.total --format=csv,noheader,nounits",
+      { timeout: 5000 }
+    ).toString().trim();
+    if (gpuOutput) {
+      const [name, usedStr, totalStr] = gpuOutput.split(", ");
+      gpu = {
+        name: name.trim(),
+        vramUsed: parseInt(usedStr),
+        vramTotal: parseInt(totalStr),
+      };
+    }
+  } catch {
+    // GPU not available or nvidia-smi not found
+  }
+
   // Kernel version
   let kernel = "Unknown";
   try {
@@ -96,6 +120,7 @@ export function getServerMetrics(): ServerMetrics {
       percentage: ((usedMem / totalMem) * 100).toFixed(1),
     },
     disk,
+    gpu,
     uptime: os.uptime(),
     containers,
     kernel,

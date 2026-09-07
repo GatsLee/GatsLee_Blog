@@ -3,9 +3,10 @@
 import { usePathname } from "next/navigation";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { LanguageProvider } from "@/context/LanguageContext";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
+import TopNav from "@/components/layout/TopNav";
+import Footer from "@/components/layout/Footer";
 import DynamicFavicon from "@/components/layout/DynamicFavicon";
+import ChatWidget from "@/components/home/ChatWidget";
 
 export default function ClientLayout({
   children,
@@ -16,19 +17,25 @@ export default function ClientLayout({
 }) {
   const pathname = usePathname();
   const isEditorPage = pathname?.startsWith("/write");
+  const isHomePage = pathname === "/";
+  const isConnectPage = pathname === "/connect";
+  // The resume page is the PDF source — nothing floating over it.
+  const isResumePage = pathname === "/resume";
+  const showChatWidget = !isEditorPage && !isHomePage && !isConnectPage && !isResumePage;
 
   return (
     <ThemeProvider>
       <LanguageProvider>
         <DynamicFavicon />
-        <div className="flex h-screen overflow-hidden">
-          <Sidebar isAdmin={isAdmin} />
-          <main className={`flex-1 flex flex-col h-screen overflow-hidden bg-background ${isEditorPage ? '' : 'relative z-10'}`}>
-            <Header />
-            <div className={`flex-1 overflow-hidden ${isEditorPage ? '' : 'overflow-y-auto p-6 sm:p-8 md:p-12'}`}>
+        <div className="min-h-screen flex flex-col">
+          <TopNav isAdmin={isAdmin} />
+          <main className={`flex-1 ${isEditorPage ? "pt-[72px]" : "pt-[72px]"}`}>
+            <div className={isEditorPage ? "" : ""}>
               {children}
             </div>
           </main>
+          {!isEditorPage && <Footer />}
+          {showChatWidget && <ChatWidget initialMessage="" defaultOpen={false} />}
         </div>
       </LanguageProvider>
     </ThemeProvider>
