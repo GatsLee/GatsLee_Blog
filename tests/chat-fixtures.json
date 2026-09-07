@@ -1,0 +1,60 @@
+{
+  "tier0_exact": [
+    { "q": "기술 스택이 어떻게 되나요?", "expectSlug": "tech_stack" },
+    { "q": "Gats Lee가 누구인가요?", "expectSlug": "intro_who" },
+    { "q": "자기소개해 주세요", "expectSlug": "intro_who" },
+    { "q": "Tell me about yourself", "expectSlug": "intro_who" },
+    { "q": "What tech stack do you use?", "expectSlug": "tech_stack" },
+    { "q": "비전공자인가요?", "expectSlug": "intro_career" },
+    { "q": "42서울에서 뭘 배웠나요?", "expectSlug": "intro_career" },
+    { "q": "어떤 기술을 사용하나요?", "expectSlug": "tech_stack" },
+    { "q": "How did you transition into AI?", "expectSlug": "intro_career" },
+    { "q": "What programming languages do you know?", "expectSlug": "tech_stack" }
+  ],
+  "tier1_close_paraphrase": [
+    { "q": "기술 스택 알려줘", "minSim": 0.80 },
+    { "q": "어떤 언어 쓰세요?", "minSim": 0.78 },
+    { "q": "본인 소개 좀 해주세요", "minSim": 0.78 },
+    { "q": "당신은 누구신가요?", "minSim": 0.78 },
+    { "q": "Who is Gats Lee?", "minSim": 0.78 },
+    { "q": "Introduce yourself please", "minSim": 0.78 },
+    { "q": "What's your background?", "minSim": 0.78 },
+    { "q": "What technologies do you work with?", "minSim": 0.78 },
+    { "q": "프로그래밍 언어 무엇 쓰나요?", "minSim": 0.78 },
+    { "q": "주로 어떤 프레임워크 사용해요?", "minSim": 0.78 },
+    { "q": "본인이 누구인지 알려주세요", "minSim": 0.78 },
+    { "q": "기술 스택을 알려주세요", "minSim": 0.80 },
+    { "q": "What's your tech stack like?", "minSim": 0.78 },
+    { "q": "어떤 기술 스택 쓰는지 궁금합니다", "minSim": 0.80 },
+    { "q": "Tell me what tech you use", "minSim": 0.78 }
+  ],
+  "tier2_loose_semantic": [
+    { "q": "백엔드 기술이 궁금해요", "minSim": 0.55, "maxSim": 0.85 },
+    { "q": "React 사용하시나요?", "minSim": 0.55, "maxSim": 0.85 },
+    { "q": "어떤 데이터베이스 쓰세요?", "minSim": 0.55, "maxSim": 0.85 },
+    { "q": "AI 모델은 뭐 사용해요?", "minSim": 0.55, "maxSim": 0.85 },
+    { "q": "Docker를 사용하나요?", "minSim": 0.55, "maxSim": 0.85 },
+    { "q": "Python 자주 쓰세요?", "minSim": 0.55, "maxSim": 0.85 },
+    { "q": "이력서 좀 보여주세요", "minSim": 0.55, "maxSim": 0.85 },
+    { "q": "왜 AI 쪽으로 오셨어요?", "minSim": 0.55, "maxSim": 0.85 },
+    { "q": "전공이 어떻게 되시나요?", "minSim": 0.55, "maxSim": 0.85 },
+    { "q": "어디서 코딩 배우셨어요?", "minSim": 0.55, "maxSim": 0.85 },
+    { "q": "What frameworks are you using right now?", "minSim": 0.55, "maxSim": 0.85 },
+    { "q": "Did you go to a coding bootcamp?", "minSim": 0.55, "maxSim": 0.85 },
+    { "q": "Are you self-taught in AI?", "minSim": 0.55, "maxSim": 0.85 },
+    { "q": "What's your favorite framework?", "minSim": 0.55, "maxSim": 0.85 },
+    { "q": "Tell me about your experience", "minSim": 0.55, "maxSim": 0.85 }
+  ],
+  "tier3_post_specific": [
+    { "q": "최근에 작성한 ModelPulse 포스트 자세히 설명해주세요" },
+    { "q": "AIOps 에이전트가 정확히 어떤 알람 보내는지" },
+    { "q": "Seekr 프로젝트의 DART MCP 연동 방식이 어떻게 돼요?" },
+    { "q": "최근 빌드 진행 상황 어디까지 됐는지 알려줘" },
+    { "q": "블로그 RAG 청크 사이즈를 어떻게 설정했어요?" },
+    { "q": "Prometheus + Grafana 대시보드 구성 보여줘" },
+    { "q": "homelab 서버에서 GPU 모니터링 하는 방법" },
+    { "q": "Cloudflare Tunnel 설정 어떻게 하셨어요?" },
+    { "q": "pgvector 안 쓰고 SQLite로 벡터 검색하는 이유" },
+    { "q": "Next.js 16에서 streaming SSR 어떻게 처리해요?" }
+  ]
+}
