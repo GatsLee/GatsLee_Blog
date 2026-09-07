@@ -17,6 +17,15 @@ interface PostItem {
   translationKey?: string | null;
 }
 
+function readingTime(content: string) {
+  const words = content.replace(/[#*`\[\]()!>_~|]/g, '').trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 200));
+}
+
+function excerpt(content: string, max = 160) {
+  return content.replace(/[#*`\[\]()!>_~|]/g, '').replace(/\n+/g, ' ').trim().substring(0, max);
+}
+
 export default function PostList({
   posts,
   basePath,
@@ -25,7 +34,6 @@ export default function PostList({
   posts: PostItem[];
   basePath: string;
   title?: string;
-  directoryPath?: string; // kept for backward-compat, ignored
 }) {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const { t } = useLanguage();
@@ -50,19 +58,44 @@ export default function PostList({
       try {
         const parsedTags = JSON.parse(post.tags);
         return Array.isArray(parsedTags) && parsedTags.includes(selectedTag);
-      } catch {
-        return false;
-      }
+      } catch { return false; }
     });
   }, [posts, selectedTag]);
 
+  // Group by year then month
+  const grouped = useMemo(() => {
+    const map: Record<number, Record<number, PostItem[]>> = {};
+    filteredPosts.forEach(post => {
+      const d = new Date(post.createdAt);
+      const y = d.getFullYear();
+      const m = d.getMonth(); // 0-indexed
+      if (!map[y]) map[y] = {};
+      if (!map[y][m]) map[y][m] = [];
+      map[y][m].push(post);
+    });
+    // Sort years desc, months desc
+    return Object.entries(map)
+      .sort(([a], [b]) => Number(b) - Number(a))
+      .map(([year, months]) => ({
+        year: Number(year),
+        months: Object.entries(months)
+          .sort(([a], [b]) => Number(b) - Number(a))
+          .map(([month, items]) => ({
+            month: Number(month),
+            items,
+          })),
+      }));
+  }, [filteredPosts]);
+
   const pageTitle = title || basePath;
 
+  const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
   return (
-    <div className="animate-fadeIn max-w-7xl mx-auto">
+    <div className="animate-fadeIn">
       {/* Breadcrumb */}
       <div className="mb-6 flex items-center gap-2 text-sm text-muted">
-        <Link href="/" className="hover:text-accent transition-colors flex items-center gap-1">
+        <Link href="/" className="hover:text-foreground transition-colors flex items-center gap-1">
           <Home size={14} strokeWidth={1.5} />
           <span>{t.nav.home}</span>
         </Link>
@@ -71,131 +104,141 @@ export default function PostList({
       </div>
 
       {/* Header */}
-      <div className="mb-8">
-        <h2
-          className="text-3xl md:text-4xl text-foreground font-semibold tracking-tight mb-3"
-          style={{ fontFamily: 'Archivo, sans-serif' }}
-        >
-          {pageTitle}
-        </h2>
-        <p className="text-sm text-muted font-medium">
-          {filteredPosts.length} {filteredPosts.length === 1 ? t.insights.comment : t.insights.comments}
-        </p>
+      <div className="mb-10 border-b border-border pb-6 flex items-end justify-between">
+        <div>
+          <h2 className="font-heading text-3xl md:text-4xl font-extrabold tracking-tight mb-1">
+            {pageTitle}
+          </h2>
+          <p className="text-sm text-muted font-light">
+            {filteredPosts.length} {filteredPosts.length === 1 ? t.insights.comment : t.insights.comments}
+          </p>
+        </div>
       </div>
 
-      {/* Tag Filter */}
+      {/* Tag filter */}
       {allTags.length > 0 && (
-        <div className="mb-8 p-4 bg-surface card-border rounded-lg">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="text-xs text-muted uppercase tracking-wider font-semibold">
-              {t.post.tags}
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
+        <div className="mb-10 flex flex-wrap gap-x-4 gap-y-2">
+          <button
+            onClick={() => setSelectedTag(null)}
+            className={`editorial-label font-bold pb-0.5 cursor-pointer transition-colors ${
+              selectedTag === null
+                ? 'text-foreground border-b border-foreground'
+                : 'text-muted hover:text-foreground'
+            }`}
+          >
+            All
+          </button>
+          {allTags.map(tag => (
             <button
-              onClick={() => setSelectedTag(null)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all cursor-pointer ${
-                selectedTag === null
-                  ? 'bg-accent text-white'
-                  : 'bg-hover text-foreground hover:bg-accent/10 card-border'
+              key={tag}
+              onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+              className={`editorial-label pb-0.5 cursor-pointer transition-colors flex items-center gap-1 ${
+                selectedTag === tag
+                  ? 'text-foreground font-bold border-b border-foreground'
+                  : 'text-muted hover:text-foreground'
               }`}
             >
-              All
+              #{tag}
+              {selectedTag === tag && (
+                <X size={10} strokeWidth={2} onClick={(e) => { e.stopPropagation(); setSelectedTag(null); }} />
+              )}
             </button>
-            {allTags.map(tag => (
-              <button
-                key={tag}
-                onClick={() => setSelectedTag(tag)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
-                  selectedTag === tag
-                    ? 'bg-accent text-white'
-                    : 'bg-hover text-foreground hover:bg-accent/10 card-border'
-                }`}
-              >
-                #{tag}
-                {selectedTag === tag && (
-                  <X size={12} strokeWidth={2} onClick={(e) => { e.stopPropagation(); setSelectedTag(null); }} />
-                )}
-              </button>
-            ))}
-          </div>
+          ))}
         </div>
       )}
 
-      {/* Post list */}
-      <div className="space-y-12">
-        {filteredPosts.map((post) => {
-          let postTags: string[] = [];
-          if (post.tags) {
-            try {
-              const parsedTags = JSON.parse(post.tags);
-              if (Array.isArray(parsedTags)) postTags = parsedTags;
-            } catch { /* ignore */ }
-          }
+      {/* Timeline feed */}
+      {grouped.length === 0 && (
+        <div className="py-24 text-center">
+          <p className="text-muted text-lg">{t.insights.empty}</p>
+        </div>
+      )}
 
-          return (
-            <div key={post.id} className="group">
-              <Link
-                href={`${basePath}/${post.slug}`}
-                className="block border-l-2 border-transparent hover:border-accent pl-8 py-4 transition-all duration-200 cursor-pointer"
-              >
-                {/* Meta row: date + locale badge */}
-                <div className="flex items-center gap-3 mb-3">
-                  <time className="text-xs text-muted uppercase tracking-wider font-medium">
-                    {new Date(post.createdAt).toLocaleDateString('en-US', {
-                      year: 'numeric', month: 'short', day: 'numeric'
-                    })}
-                  </time>
-                  {post.locale && (
-                    <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded card-border text-muted">
-                      {post.locale}
-                    </span>
-                  )}
-                </div>
-
-                {/* Title */}
-                <h3
-                  className="text-2xl md:text-3xl font-semibold text-foreground group-hover:text-accent transition-colors mb-4 tracking-tight"
-                  style={{ fontFamily: 'Archivo, sans-serif' }}
-                >
-                  {post.title}
-                </h3>
-
-                {/* Excerpt */}
-                <p className="text-secondary text-base leading-relaxed line-clamp-2 mb-4 max-w-3xl">
-                  {post.content}
-                </p>
-
-                {/* Tags */}
-                {postTags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {postTags.map(tag => (
-                      <span
-                        key={tag}
-                        className="px-2 py-1 text-xs font-medium bg-hover text-muted rounded card-border"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Read more */}
-                <div className="flex items-center gap-2 text-sm text-muted group-hover:text-accent transition-colors font-medium">
-                  <span>{t.insights.readMore}</span>
-                  <ArrowRight size={16} strokeWidth={2} className="group-hover:translate-x-1 transition-transform" />
-                </div>
-              </Link>
-            </div>
-          );
-        })}
-
-        {filteredPosts.length === 0 && (
-          <div className="py-24 text-center">
-            <p className="text-muted text-lg">{t.insights.empty}</p>
+      {grouped.map(({ year, months }) => (
+        <div key={year} className="mb-16">
+          {/* Year label */}
+          <div className="flex items-center gap-4 mb-8">
+            <span className="font-heading text-xs font-bold tracking-[0.2em] text-muted uppercase">
+              {year}
+            </span>
+            <div className="flex-1 h-px bg-border" />
           </div>
-        )}
-      </div>
+
+          {months.map(({ month, items }) => (
+            <div key={month} className="mb-10">
+              {/* Month label */}
+              <div className="flex items-start gap-6 md:gap-12">
+                <div className="w-10 md:w-14 shrink-0 pt-0.5">
+                  <span className="editorial-label text-muted text-[11px] tracking-widest uppercase">
+                    {MONTH_NAMES[month]}
+                  </span>
+                </div>
+
+                {/* Posts in this month */}
+                <div className="flex-1 min-w-0 space-y-10 border-l border-border pl-6 md:pl-10">
+                  {items.map(post => {
+                    const d = new Date(post.createdAt);
+                    const day = String(d.getDate()).padStart(2, '0');
+                    let postTags: string[] = [];
+                    try {
+                      const p = JSON.parse(post.tags ?? '[]');
+                      if (Array.isArray(p)) postTags = p;
+                    } catch { /* ignore */ }
+                    const rt = readingTime(post.content);
+                    const ex = excerpt(post.content);
+
+                    return (
+                      <article key={post.id} className="group">
+                        <Link href={`${basePath}/${post.slug}`} className="block">
+                          <div className="flex items-start gap-4 mb-3">
+                            <span className="editorial-label text-muted text-[11px] tracking-wider tabular-nums shrink-0 pt-1">
+                              {MONTH_NAMES[month].toUpperCase()} {day}
+                            </span>
+                            {post.locale && (
+                              <span className="editorial-label text-muted/60 text-[10px] shrink-0 pt-1">
+                                {post.locale.toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+
+                          <h3 className="font-heading text-xl md:text-2xl font-bold mb-2 group-hover:underline underline-offset-8 decoration-1 tracking-tight leading-snug">
+                            {post.title}
+                          </h3>
+
+                          {ex && (
+                            <p className="text-secondary text-sm leading-relaxed mb-3 font-light max-w-2xl">
+                              {ex}
+                            </p>
+                          )}
+
+                          <div className="flex items-center gap-4 flex-wrap">
+                            {postTags.length > 0 && (
+                              <div className="flex gap-2">
+                                {postTags.slice(0, 4).map(tag => (
+                                  <span key={tag} className="editorial-label text-muted/70 text-[11px]">
+                                    #{tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <span className="editorial-label text-muted/50 text-[11px] ml-auto">
+                              {rt} min read
+                            </span>
+                            <div className="flex items-center gap-1.5 editorial-label text-foreground font-bold text-[11px]">
+                              <span>{t.insights.readMore}</span>
+                              <ArrowRight size={11} strokeWidth={2.5} className="group-hover:translate-x-1 transition-transform" />
+                            </div>
+                          </div>
+                        </Link>
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }

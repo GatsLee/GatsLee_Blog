@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { prisma } from "@/lib/db";
 import ProductGallery from "./ProductGallery";
 
@@ -22,5 +23,9 @@ export default async function ProductsPage() {
     createdAt: p.createdAt.toISOString(),
   }));
 
-  return <ProductGallery posts={serialized} />;
+  return (
+    <Suspense>
+      <ProductGallery posts={serialized} />
+    </Suspense>
+  );
 }

@@ -4,7 +4,7 @@ import InsightsList from "./InsightsList";
 export default async function InsightsPage() {
   const posts = await prisma.post.findMany({
     where: {
-      category: { in: ["devlog", "troubleshooting"] },
+      category: "journal",
       published: true,
     },
     orderBy: { createdAt: "desc" },

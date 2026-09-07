@@ -2,9 +2,15 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Settings, Trash2, Pencil, X, Check, FileText, MessageSquare, Users, Pin } from "lucide-react";
+import { Settings, Trash2, Pencil, X, Check, FileText, MessageSquare, Users, Pin, ChevronLeft, ChevronRight } from "lucide-react";
+import ChatAnalyticsTab from "@/components/admin/ChatAnalyticsTab";
+import AboutEditorTab from "@/components/admin/AboutEditorTab";
+import ResumeEditorTab from "@/components/admin/ResumeEditorTab";
+import RAGManagementTab from "@/components/admin/RAGManagementTab";
+import FaqManagementTab from "@/components/admin/FaqManagementTab";
+import { CATEGORIES } from "@/lib/categories";
 
-type Tab = "posts" | "comments" | "guestbook";
+type Tab = "posts" | "comments" | "guestbook" | "chat" | "rag" | "faq" | "about" | "resume";
 
 interface Post {
   id: number;
@@ -33,6 +39,8 @@ interface GuestEntry {
   createdAt: string;
 }
 
+const POSTS_PER_PAGE = 10;
+
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>("posts");
   const [posts, setPosts] = useState<Post[]>([]);
@@ -40,11 +48,13 @@ export default function AdminPage() {
   const [guestEntries, setGuestEntries] = useState<GuestEntry[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
-  const [postCategoryFilter, setPostCategoryFilter] = useState<string>("all");
+  const [postCategoryFilter, setPostCategoryFilter] = useState<string>("journal");
   const [editingGithubId, setEditingGithubId] = useState<number | null>(null);
   const [githubRepoValue, setGithubRepoValue] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const tabLabels: Record<Tab, string> = { posts: "Posts", comments: "Comments", guestbook: "Guestbook" };
+  const tabLabels: Record<Tab, string> = { posts: "Posts", comments: "Comments", guestbook: "Guestbook", chat: "Chat", rag: "RAG", faq: "FAQ", about: "About", resume: "Resume" };
 
   useEffect(() => {
     if (activeTab === "posts") {
@@ -65,6 +75,23 @@ export default function AdminPage() {
     }
   }, [activeTab]);
 
+  // Reset page and selection when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedIds(new Set());
+  }, [postCategoryFilter]);
+
+  const filteredPosts = posts.filter(
+    (post) => post.category === postCategoryFilter
+  );
+  const totalPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
+  const paginatedPosts = filteredPosts.slice(
+    (currentPage - 1) * POSTS_PER_PAGE,
+    currentPage * POSTS_PER_PAGE
+  );
+  const startIndex = (currentPage - 1) * POSTS_PER_PAGE + 1;
+  const endIndex = Math.min(currentPage * POSTS_PER_PAGE, filteredPosts.length);
+
   const handleDelete = async (type: string, id: number) => {
     if (!confirm("Are you sure you want to delete this?")) return;
 
@@ -76,10 +103,48 @@ export default function AdminPage() {
 
     const res = await fetch(urlMap[type], { method: "DELETE" });
     if (res.ok) {
-      if (type === "posts") setPosts((prev) => prev.filter((p) => p.id !== id));
+      if (type === "posts") {
+        setPosts((prev) => prev.filter((p) => p.id !== id));
+        setSelectedIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
+      }
       if (type === "comments") setComments((prev) => prev.filter((c) => c.id !== id));
       if (type === "guestbook") setGuestEntries((prev) => prev.filter((e) => e.id !== id));
     }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Delete ${selectedIds.size} selected post(s)?`)) return;
+
+    const ids = Array.from(selectedIds);
+    for (const id of ids) {
+      await fetch(`/api/posts/${id}`, { method: "DELETE" });
+    }
+    setPosts((prev) => prev.filter((p) => !selectedIds.has(p.id)));
+    setSelectedIds(new Set());
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const pageIds = paginatedPosts.map((p) => p.id);
+    const allSelected = pageIds.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelected) {
+        pageIds.forEach((id) => next.delete(id));
+      } else {
+        pageIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
   };
 
   const handleTogglePublish = async (post: Post) => {
@@ -152,7 +217,7 @@ export default function AdminPage() {
     }
   };
 
-  const tabs: Tab[] = ["posts", "comments", "guestbook"];
+  const tabs: Tab[] = ["posts", "comments", "guestbook", "chat", "rag", "faq", "about", "resume"];
 
   const getTabIcon = (tab: Tab) => {
     switch (tab) {
@@ -183,7 +248,7 @@ export default function AdminPage() {
             onClick={() => { setActiveTab(tab); setEditingId(null); }}
             className={`px-6 py-3 text-sm font-medium transition-all rounded-lg cursor-pointer flex items-center gap-2 ${
               activeTab === tab
-                ? "bg-accent text-background shadow-lg shadow-accent/20"
+                ? "bg-accent text-background shadow-lg shadow-accent/20 ring-2 ring-accent ring-offset-2 ring-offset-background"
                 : "bg-surface text-muted card-border hover:border-accent hover:text-accent"
             }`}
           >
@@ -196,134 +261,116 @@ export default function AdminPage() {
       {/* Posts Tab */}
       {activeTab === "posts" && (
         <>
-          {/* Category Filter Buttons */}
-          <div className="flex gap-3 mb-6">
-            {["all", "devlog", "troubleshooting", "product", "agent", "blueprint"].map((filter) => (
+          {/* Category Filter */}
+          <div className="flex gap-3 mb-6 flex-wrap">
+            {CATEGORIES.map((filter) => (
               <button
                 key={filter}
-                onClick={() => setPostCategoryFilter(filter)}
-                className={`px-5 py-2.5 text-xs font-medium uppercase tracking-wider transition-all rounded-lg ${
+                onClick={() => { setPostCategoryFilter(filter); setCurrentPage(1); }}
+                className={`px-5 py-2.5 text-xs font-medium uppercase tracking-wider transition-all rounded-lg cursor-pointer ${
                   postCategoryFilter === filter
-                    ? "bg-accent text-background shadow-md"
+                    ? "bg-accent text-background shadow-md ring-2 ring-accent ring-offset-2 ring-offset-background"
                     : "bg-background text-muted card-border hover:border-accent hover:text-accent"
                 }`}
               >
-                {filter === "all" ? "All Posts" : filter.charAt(0).toUpperCase() + filter.slice(1)}
+                {filter.charAt(0).toUpperCase() + filter.slice(1)}
               </button>
             ))}
           </div>
 
-          <div className="bg-background card-border rounded-xl overflow-hidden shadow-lg">
-            <table className="w-full text-sm">
+          {/* Bulk Actions */}
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-3 mb-4 p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
+              <span className="text-sm text-foreground font-medium">{selectedIds.size} selected</span>
+              <button onClick={handleBulkDelete} className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/20 transition-colors cursor-pointer">
+                <Trash2 size={13} /> Delete Selected
+              </button>
+              <button onClick={() => setSelectedIds(new Set())} className="text-xs text-muted hover:text-foreground transition-colors cursor-pointer">Clear</button>
+            </div>
+          )}
+
+          <div className="bg-background card-border rounded-xl overflow-hidden shadow-lg overflow-x-auto">
+            <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="border-b border-border text-muted text-xs font-mono uppercase bg-background">
+                  <th className="p-4 w-10">
+                    <input type="checkbox" checked={paginatedPosts.length > 0 && paginatedPosts.every((p) => selectedIds.has(p.id))} onChange={toggleSelectAll} className="accent-accent cursor-pointer" />
+                  </th>
                   <th className="text-left p-4">Title</th>
                   <th className="text-left p-4 hidden md:table-cell">Category</th>
                   <th className="text-left p-4">Status</th>
-                  <th className="text-left p-4 hidden lg:table-cell">GitHub</th>
                   <th className="text-left p-4 hidden md:table-cell">Date</th>
                   <th className="text-right p-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {posts
-                  .filter((post) => postCategoryFilter === "all" || post.category === postCategoryFilter)
-                  .map((post) => (
-                    <tr key={post.id} className="border-b border-border/50 hover:bg-surface transition-colors">
-                      <td className="p-4">
-                        <span className="text-foreground font-medium">{post.title}</span>
-                        <span className="text-secondary text-xs ml-2">({post._count.comments})</span>
-                      </td>
-                      <td className="p-4 hidden md:table-cell">
-                        <span className="text-muted text-xs font-mono bg-surface px-2 py-1 rounded">{post.category}</span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleTogglePublish(post)}
-                            className={`text-xs font-mono px-3 py-1.5 rounded cursor-pointer transition-all ${
-                              post.published
-                                ? "bg-accent/20 text-accent border border-accent/30"
-                                : "bg-red-500/20 text-red-500 border border-red-500/30"
-                            }`}
-                          >
-                            {post.published ? "Published" : "Draft"}
-                          </button>
-                          <button
-                            onClick={() => handleTogglePin(post)}
-                            title={post.pinned ? "Unpin" : "Pin to home"}
-                            className={`p-1.5 rounded cursor-pointer transition-all ${
-                              post.pinned
-                                ? "text-amber-400 bg-amber-400/10"
-                                : "text-muted hover:text-amber-400 hover:bg-amber-400/10"
-                            }`}
-                          >
-                            <Pin size={12} strokeWidth={post.pinned ? 2.5 : 1.5} />
-                          </button>
-                        </div>
-                      </td>
-                      <td className="p-4 hidden lg:table-cell">
-                        {editingGithubId === post.id ? (
-                          <div className="flex items-center gap-1">
-                            <input
-                              type="text"
-                              value={githubRepoValue}
-                              onChange={(e) => setGithubRepoValue(e.target.value)}
-                              placeholder="owner/repo"
-                              className="bg-background card-border rounded px-2 py-1 text-xs font-mono text-foreground focus:border-accent focus:outline-none w-32"
-                              autoFocus
-                            />
-                            <button onClick={() => handleSaveGithubRepo(post.id)} className="text-accent p-1 cursor-pointer"><Check size={12} /></button>
-                            <button onClick={() => setEditingGithubId(null)} className="text-muted p-1 cursor-pointer"><X size={12} /></button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => { setEditingGithubId(post.id); setGithubRepoValue(post.githubRepo ?? ""); }}
-                            className="text-xs font-mono text-muted hover:text-accent transition-colors cursor-pointer truncate max-w-[120px] block"
-                          >
-                            {post.githubRepo || <span className="opacity-40">set repo…</span>}
-                          </button>
-                        )}
-                      </td>
-                      <td className="p-4 hidden md:table-cell text-secondary text-xs font-mono">
-                        {new Date(post.createdAt).toISOString().split("T")[0]}
-                      </td>
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={`/write/edit/${post.id}`}
-                            className="text-muted hover:text-accent transition-colors p-2 hover:bg-surface rounded"
-                            title="Edit"
-                          >
-                            <Pencil size={14} />
-                          </Link>
-                          <button
-                            onClick={() => handleDelete("posts", post.id)}
-                            className="text-muted hover:text-red-500 transition-colors cursor-pointer p-2 hover:bg-surface rounded"
-                            title="Delete"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                {posts
-                  .filter((post) => postCategoryFilter === "all" || post.category === postCategoryFilter)
-                  .length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="p-12 text-center text-secondary font-mono text-sm">
-                        {postCategoryFilter === "all" ? "No items found" : `No ${postCategoryFilter} posts found.`}
-                      </td>
-                    </tr>
-                  )}
+                {paginatedPosts.map((post) => (
+                  <tr key={post.id} className={`border-b border-border/50 hover:bg-surface transition-colors ${selectedIds.has(post.id) ? 'bg-accent/5' : ''}`}>
+                    <td className="p-4">
+                      <input type="checkbox" checked={selectedIds.has(post.id)} onChange={() => toggleSelect(post.id)} className="accent-accent cursor-pointer" />
+                    </td>
+                    <td className="p-4">
+                      <span className="text-foreground font-medium">{post.title}</span>
+                      <span className="text-secondary text-xs ml-2">({post._count.comments})</span>
+                    </td>
+                    <td className="p-4 hidden md:table-cell">
+                      <span className="text-muted text-xs font-mono bg-surface px-2 py-1 rounded">{post.category}</span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleTogglePublish(post)} className={`text-xs font-mono px-3 py-1.5 rounded cursor-pointer transition-all ${post.published ? "bg-accent/20 text-accent border border-accent/30" : "bg-red-500/20 text-red-500 border border-red-500/30"}`}>
+                          {post.published ? "Published" : "Draft"}
+                        </button>
+                        <button onClick={() => handleTogglePin(post)} title={post.pinned ? "Unpin" : "Pin"} className={`p-1.5 rounded cursor-pointer transition-all ${post.pinned ? "text-amber-400 bg-amber-400/10" : "text-muted hover:text-amber-400 hover:bg-amber-400/10"}`}>
+                          <Pin size={12} strokeWidth={post.pinned ? 2.5 : 1.5} />
+                        </button>
+                      </div>
+                    </td>
+                    <td className="p-4 hidden md:table-cell text-secondary text-xs font-mono">
+                      {new Date(post.createdAt).toISOString().split("T")[0]}
+                    </td>
+                    <td className="p-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link href={`/write/edit/${post.id}`} className="text-muted hover:text-accent transition-colors p-2 hover:bg-surface rounded" title="Edit">
+                          <Pencil size={14} />
+                        </Link>
+                        <button onClick={() => handleDelete("posts", post.id)} className="text-muted hover:text-red-500 transition-colors cursor-pointer p-2 hover:bg-surface rounded" title="Delete">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredPosts.length === 0 && (
+                  <tr><td colSpan={6} className="p-12 text-center text-secondary font-mono text-sm">No posts found</td></tr>
+                )}
               </tbody>
             </table>
+
+            {/* Pagination */}
+            {filteredPosts.length > POSTS_PER_PAGE && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                <span className="text-xs text-muted font-mono">{startIndex}–{endIndex} of {filteredPosts.length}</span>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1.5 rounded text-muted hover:text-foreground hover:bg-hover disabled:opacity-30 cursor-pointer transition-colors">
+                    <ChevronLeft size={14} />
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button key={page} onClick={() => setCurrentPage(page)} className={`w-7 h-7 text-xs font-mono rounded cursor-pointer transition-colors ${page === currentPage ? "bg-accent text-background" : "text-muted hover:text-foreground hover:bg-hover"}`}>
+                      {page}
+                    </button>
+                  ))}
+                  <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1.5 rounded text-muted hover:text-foreground hover:bg-hover disabled:opacity-30 cursor-pointer transition-colors">
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}
 
-      {/* Comments Tab - Similar updates */}
+      {/* Comments Tab */}
       {activeTab === "comments" && (
         <div className="bg-background card-border rounded-xl overflow-hidden shadow-lg">
           <table className="w-full text-sm">
@@ -408,7 +455,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Guestbook Tab - Similar updates */}
+      {/* Guestbook Tab */}
       {activeTab === "guestbook" && (
         <div className="bg-background card-border rounded-xl overflow-hidden shadow-lg">
           <table className="w-full text-sm">
@@ -492,6 +539,20 @@ export default function AdminPage() {
           </table>
         </div>
       )}
+
+      {/* Chat Analytics Tab */}
+      {activeTab === "chat" && <ChatAnalyticsTab />}
+
+      {/* RAG Management Tab */}
+      {activeTab === "rag" && <RAGManagementTab />}
+
+      {/* FAQ Management Tab */}
+      {activeTab === "faq" && <FaqManagementTab />}
+
+      {/* About Editor Tab */}
+      {activeTab === "about" && <AboutEditorTab />}
+
+      {activeTab === "resume" && <ResumeEditorTab />}
     </div>
   );
 }

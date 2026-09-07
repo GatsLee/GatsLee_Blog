@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { MessageSquare } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface Comment {
   id: number;
@@ -11,6 +12,7 @@ interface Comment {
 }
 
 export default function CommentSection({ postId }: { postId: number }) {
+  const { t } = useLanguage();
   const [comments, setComments] = useState<Comment[]>([]);
   const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
@@ -52,10 +54,10 @@ export default function CommentSection({ postId }: { postId: number }) {
   };
 
   return (
-    <div className="mt-8 border-t border-[#2e2e4a] pt-8">
-      <h3 className="text-lg font-bold text-[#d4d4dc] mb-6 flex items-center">
+    <div className="mt-8 border-t border-border pt-8">
+      <h3 className="text-lg font-bold text-foreground mb-6 flex items-center">
         <MessageSquare className="mr-2" size={18} />
-        Comments ({comments.length})
+        {t.post.comments} ({comments.length})
       </h3>
 
       {/* Comment List */}
@@ -63,55 +65,55 @@ export default function CommentSection({ postId }: { postId: number }) {
         {comments.map((comment) => (
           <div
             key={comment.id}
-            className="border-l-2 border-[#2e2e4a] pl-4 py-2"
+            className="border-l-2 border-border pl-4 py-2"
           >
             <div className="flex items-baseline gap-3 mb-1">
-              <span className="text-[#d4a054] text-xs font-bold font-mono">
+              <span className="text-accent text-xs font-bold font-mono">
                 [{comment.author}]
               </span>
-              <span className="text-[10px] text-[#5a5a72] font-mono">
+              <span className="text-xs text-muted font-mono">
                 {new Date(comment.createdAt).toLocaleString()}
               </span>
             </div>
-            <p className="text-[#b0b0bc] text-sm">{comment.content}</p>
+            <p className="text-secondary text-sm">{comment.content}</p>
           </div>
         ))}
         {comments.length === 0 && (
-          <p className="text-[#5a5a72] text-sm font-mono">No comments yet.</p>
+          <p className="text-muted text-sm font-mono">{t.post.noComments}</p>
         )}
       </div>
 
       {/* Comment Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs text-[#8888a0] mb-2 font-mono uppercase">
-            Name (optional)
+          <label className="block text-xs text-muted mb-2 font-mono uppercase">
+            {t.post.nameOptional}
           </label>
           <input
             type="text"
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
-            className="w-full bg-[#1a1a2e] border border-[#2e2e4a] rounded p-3 text-[#d4d4dc] focus:border-[#d4a054] focus:outline-none transition-colors placeholder-[#3a3a52] text-sm"
+            className="w-full bg-surface border border-border rounded p-3 text-base text-foreground focus:border-accent focus:outline-none transition-colors placeholder-muted"
             placeholder="guest"
           />
         </div>
         <div>
-          <label className="block text-xs text-[#8888a0] mb-2 font-mono uppercase">
-            Comment
+          <label className="block text-xs text-muted mb-2 font-mono uppercase">
+            {t.post.comments}
           </label>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full h-24 bg-[#1a1a2e] border border-[#2e2e4a] rounded p-3 text-[#b0b0bc] focus:border-[#d4a054] focus:outline-none transition-colors font-mono text-sm placeholder-[#3a3a52]"
-            placeholder="Leave a comment..."
+            className="w-full h-24 bg-surface border border-border rounded p-3 text-base text-secondary focus:border-accent focus:outline-none transition-colors font-mono placeholder-muted"
+            placeholder={t.post.commentPlaceholder}
           />
         </div>
         <button
           type="submit"
           disabled={loading || !content.trim()}
-          className="bg-[#d4a054] hover:bg-[#c49544] text-[#1a1a2e] font-bold py-2 px-6 text-xs transition-colors uppercase tracking-wider rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-accent hover:bg-accent/90 text-white font-bold py-2.5 px-6 text-sm transition-colors uppercase tracking-wider rounded disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-95"
         >
-          {loading ? "Sending..." : "Submit"}
+          {loading ? t.post.sending : t.post.submitComment}
         </button>
       </form>
     </div>
