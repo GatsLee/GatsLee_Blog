@@ -1,108 +1,112 @@
 # GatsBlog 와이어프레임 구성
 
-Figma 상세기획 파일에 제작한 와이어프레임의 화면 목록과 섹션 조립 내역. 홈 상단 네비게이션 6개 탭을 기준으로 나눴다.
+Figma 상세기획 파일에 제작한 와이어프레임의 화면 목록과 구성. 로컬에서 실제로 돌아가는 화면을 브라우저로 확인한 뒤, 그 디자인 언어를 그대로 재현했다.
 
 | 항목 | 값 |
 |------|-----|
 | 파일 | [GatsBlog 상세기획](https://www.figma.com/design/wsLPU5JDsN67AAutcUBGeO/GatsBlog-%EC%83%81%EC%84%B8%EA%B8%B0%ED%9A%8D) |
 | File Key | `wsLPU5JDsN67AAutcUBGeO` |
-| 페이지 | `wireframe(web)` (node 0-1), `wireframe(mobile)` (node 1-2) |
-| 디자인 시스템 | Simple Design System — 컴포넌트 목록은 `figma-simple-design-system-index.md` |
-| 캔버스 폭 | web 1200px, mobile 375px |
-| 제작 일자 | 2026-09-07 |
+| 페이지 | `wireframe(web)` (0-1), `wireframe(mobile)` (1-2), `components(local)` |
+| 캔버스 폭 | web 1440px, mobile 390px |
+| 기준 화면 | `http://localhost:4000` 실측 (2026-09-07) |
+
+## 두 벌이 들어 있다
+
+| 위치 | 내용 | 상태 |
+|------|------|------|
+| y=0, `[구버전-SDS] *` | Simple Design System 블록으로만 조립한 1차본 | 폐기 대기 |
+| y=9000, `01_Home` 외 | 실제 GatsBlog 디자인을 재현한 2차본 | 사용 |
+
+1차본은 SDS의 마케팅용 Hero·Card Grid·Panel을 그대로 썼는데, GatsBlog의 실제 디자인과 언어가 달랐다. 삭제 권한이 없어 이름만 `[구버전-SDS]`로 바꿔 남겨뒀다.
+
+## 디자인 언어 (실측 기준)
+
+| 요소 | 사양 |
+|------|------|
+| 배경 | 모눈 그리드. web 51.5px 셀, mobile 60px 셀. 선 `#E7E7E7` 1px |
+| 모노 라벨 | 대문자 + 자간 1.2~2.4px, 10~12px, 회색. eyebrow·메타·상태·섹션 라벨에 사용 |
+| 제목 | web 히어로 56px / 페이지 타이틀 40px / 섹션 32px, Bold, 자간 음수 |
+| 본문 | 13~15px, 행간 172~186% |
+| 구분 | 그림자 없음. 1px 헤어라인만으로 행·섹션을 나눈다 |
+| 버튼 | 주요 = 검정 채움 + 흰 텍스트, 보조 = 1px 테두리. 라운드 없음 |
+| 칩 | 상태칩은 연한 배경 채움(개발중 파랑 / 기획중 앰버 / 배포됨 초록), 기술칩은 테두리 |
+| 터미널 패널 | 1px 테두리 카드 + 모노 key/value + 빨간 게이지 바 |
+| 플로팅 | 우하단 `ASK GATS` 검정 필 |
 
 ## 탭 구조
 
-홈 `TopNav`(`src/components/layout/TopNav.tsx`)의 `navItems`가 탭 기준이다. 방명록은 푸터에, 작성·관리는 관리자 전용이라 별도 섹션으로 뺐다.
+홈 `TopNav`의 `navItems` 기준. 실제 라벨은 한글이다.
 
-| 섹션 | 탭 | 라우트 | 화면 수 |
-|------|----|--------|---------|
-| 01_Home | Home | `/` | 1 (mobile 2) |
-| 02_Cases | Cases | `/cases`, `/cases/[slug]` | 2 |
-| 03_Resume | Resume | `/resume` | 1 |
-| 04_Products | Products | `/products`, `/products/[slug]` | 2 |
-| 05_Insights | Insights | `/insights`, `/insights/[slug]` | 2 |
-| 06_About | About | `/about` | 1 |
-| 07_보조 | 푸터·비로그인 | `/connect`, `/login` | 2 |
-| 08_관리자 | 관리자 전용 | `/admin`, `/write` | 2 |
+| 섹션 | 탭 라벨 | 라우트 | web | mobile |
+|------|---------|--------|-----|--------|
+| 01_Home | 홈 | `/` | W-01 | M-01, M-01b(메뉴 열림) |
+| 02_Cases | 케이스 스터디 | `/cases`, `/cases/[slug]` | W-02, W-03 | M-02, M-03 |
+| 03_Resume | 이력서 | `/resume` | W-04 | M-04 |
+| 04_Build | 빌드 | `/products`, `/products/[slug]` | W-05, W-06 | M-05, M-06 |
+| 05_Journal | 저널 | `/insights`, `/insights/[slug]` | W-07, W-08 | M-07, M-08 |
+| 06_About | 소개 | `/about` | W-09 | M-09 |
+| 07_보조 | 푸터·비로그인 | `/connect`, `/login` | W-10, W-11 | M-10, M-11 |
+| 08_관리자 | 관리자 전용 | `/admin`, `/write` | W-12, W-13 | M-12, M-13 |
 
-web 13개, mobile 14개(모바일 메뉴 열림 상태 추가). 합계 27개 프레임.
+web 13개 + mobile 14개 = 27개 프레임. 각 화면의 헤더는 해당 탭이 활성(검정 + 밑줄) 상태로 override돼 있다.
 
-## 화면별 섹션 조립
+## 화면별 구성
 
-각 화면은 세로 auto-layout 프레임이고, 자식은 전부 Simple Design System 인스턴스다. `Platform` variant로 web(Desktop)·mobile(Mobile)을 가른다.
+**W-01 / M-01 홈** — 헤더 / 히어로(모노 eyebrow + 56px 명제 + 리드 + CTA 2개 ‖ 지표 3행: 80%·3·99%+) / 홈서버 상태(설명 ‖ 터미널 패널 UPTIME·CONTAINERS·RAM·DISK) / 빌더 로그 ‖ 진행 중인 프로젝트(프로덕트·에이전트 2열, 상태 닷 + 모노 상태) / 푸터. mobile은 전부 1열로 쌓인다.
 
-### 01_Home
+**M-01b 메뉴 열림** — 전체화면 메뉴, 6개 탭 24px, 활성 탭만 검정.
 
-**W-01 / M-01 홈**
+**W-02 / M-02 케이스 목록** — 브레드크럼 / 타이틀 + 설명 / 헤어라인 / 빈 상태(아직 공개된 케이스가 없습니다).
 
-| 순서 | 레이어 | SDS 컴포넌트 | 역할 |
-|------|--------|--------------|------|
-| 1 | SEC_글로벌헤더 | Header | 로고 + 6개 탭 + KO/EN + LOGIN |
-| 2 | SEC_히어로_명제 | Hero Actions | 명제 한 줄 + CTA 2개 |
-| 3 | SEC_지표 | Card Grid Icon | 운영 지표 6종 |
-| 4 | SEC_현재빌드 | Panel Image Content | 진행 중 빌드의 목표·진척률 |
-| 5 | SEC_빌드로그 | Card Grid Content List | 최신 빌드 로그 3건 |
-| 6 | SEC_포트폴리오 | Card Grid Image | 프로덕트·에이전트 6종 |
-| 7 | SEC_글로벌푸터 | Footer | 둘러보기 / 콘텐츠 / 연락 3열 |
+**W-03 / M-03 케이스 상세** — 뒤로가기 / 제목 / 메타(날짜·카테고리·읽는 시간·공유) / 태그칩 / AI 요약 박스 / 본문 / 헤어라인 / 댓글(0) + 이름·댓글 필드 + 버튼.
 
-**M-01b 홈_메뉴열림** — Header `Platform=Mobile, State=Open` 단독. 모바일 햄버거를 눌렀을 때의 전체화면 메뉴.
+**W-04 / M-04 이력서** — PDF 저장 버튼 / 이름 + 태그라인 / 연락처 모노 / 2px 굵은 선 / 요약(em-dash 불릿) / 핵심 역량 2열(web) / 기술 스택 key-value / 교육·활동 행.
 
-### 02_Cases
+**W-05 / M-05 빌드 목록** — 브레드크럼 / 타이틀 / 필터 탭(전체 6·프로덕트 3·에이전트 3) / 카드 그리드 3열(web) — 상태칩 + 타입칩 + 날짜 / 이름 / 요약 / 기술칩 / 자세히 보기.
 
-**W-02 / M-02 케이스목록**: Header, Hero Basic(페이지 타이틀), Tabs(카테고리 필터), Card Grid Content List(목록), Pagination, Footer
+**W-06 / M-06 빌드 상세** — 뒤로가기 / 제목 / 메타 / 태그 / GitHub 버튼 / 개요 카드 3개(PURPOSE·TARGET AUDIENCE·EXPECTED EFFECT) / SCREENSHOTS / 본문 + h2 / 코드 블록(다크) / web은 우측 ON THIS PAGE 목차.
 
-**W-03 / M-03 케이스상세**: Header, Hero Basic(케이스 헤드), Panel Image Content(문제와 가설), Card Grid Content List(관련 케이스), Footer
+**W-07 / M-07 저널 목록** — 브레드크럼 / 타이틀 + 아티클 수 / 태그 필터(ALL + 해시태그 랩) / 연도 마커 / 아티클 행(월 거터 + 날짜·언어 + 제목 + 발췌 + 태그 + 읽는 시간 + 더 읽기).
 
-### 03_Resume
+**W-08 / M-08 저널 상세** — 상세와 동일 패턴 + AI 요약 박스 + 댓글.
 
-**W-04 / M-04 이력서**: Header, Hero Basic(프로필 헤드 + PDF/연락 CTA), Card Grid Icon(핵심 지표), Card Grid Content List(경력), Panel Image Content(역량과 도구), Footer
+**W-09 / M-09 소개** — 수직선 + 중앙 스테이트먼트 / 관심 있는 문제(01·02·03 + 대형 키워드 + 제목 + 설명 + 자세히 아코디언).
 
-### 04_Products
+**W-10 / M-10 커넥트** — 타이틀 / 테두리 박스 안 빈 상태 / 하단 입력행(이름 + 메시지 + 전송).
 
-**W-05 / M-05 프로덕트목록**: Header, Hero Basic, Page Product Results(검색 + 결과 그리드), Footer
+**W-11 / M-11 로그인** — 중앙 폰 아이콘 + GATS_LAB / 테두리 카드(ADMIN AUTHENTICATION, USERNAME, PASSWORD, AUTHENTICATE 검정 버튼). 푸터만, 챗 버튼 포함.
 
-**W-06 / M-06 프로덕트상세**: Header, Page Product(개요 2열), Tabs(섹션 탭), Card Grid Image(화면), Footer
+**W-12 / M-12 관리자** — ADMIN 라벨 / 콘텐츠 관리 / 관리 탭 6개 / 게시글 테이블(제목·카테고리·공개·수정일·작업). mobile은 카드형 행.
 
-### 05_Insights
+**W-13 / M-13 글작성** — 제목 입력 / 툴바 / 블록 에디터 영역 / 발행 설정 패널(카테고리·태그·언어·공개 여부·관련 글) + 임시저장·발행.
 
-**W-07 / M-07 인사이트목록**: Header, Hero Basic, Tabs(태그 필터), Card Grid Content List, Pagination, Footer
+## 로컬 컴포넌트
 
-**W-08 / M-08 인사이트상세**: Header, Hero Basic(글 헤드), Panel Image Content(본문), Card Grid Content List(관련 글), Footer
+`components(local)` 페이지에 둔다. 화면들은 이 인스턴스를 공유한다.
 
-### 06_About
+| 컴포넌트 | 용도 |
+|----------|------|
+| CMP_그리드배경_web / _mobile | 모눈 배경 (1440×5200 / 390×5200) |
+| CMP_헤더_web / CMP_헤더_mobile | 글로벌 헤더 |
+| CMP_푸터_web / CMP_푸터_mobile | 글로벌 푸터 |
+| CMP_챗버튼 | ASK GATS 플로팅 |
 
-**W-09 / M-09 소개**: Header, Hero Image(인트로), Panel Image Content(일하는 방식), Panel Image Content Reverse(관심 영역), Card Grid Icon(역량 요약), Footer
-
-### 07_보조
-
-**W-10 / M-10 방명록**: Header, Hero Basic, Card Grid Testimonials(남겨진 메시지), Form Contact(입력 폼), Footer
-
-**W-11 / M-11 로그인**: Header Auth, Form Log In. 푸터 없음.
-
-### 08_관리자
-
-**W-12 / M-12 관리자대시보드**: Header Auth, Tabs(게시글·FAQ·RAG·이력서), Card Grid Content List(관리 목록), Footer
-
-**W-13 / M-13 글작성**: Header Auth, Page Product(본문 + 발행 설정 2열), Footer
+Simple Design System은 이번 2차본에서 쓰지 않았다. GatsBlog의 그리드·모노·헤어라인 언어를 SDS 컴포넌트로는 재현할 수 없었기 때문이다. SDS 컴포넌트 목록은 `figma-simple-design-system-index.md`에 그대로 남아 있고, 필요하면 폼·달력 같은 범용 요소에 부분적으로 쓸 수 있다.
 
 ## 네이밍 규칙
 
-- 화면 프레임: `W-{번호}_{화면명}` (web), `M-{번호}_{화면명}` (mobile). 번호는 두 플랫폼에서 동일한 화면을 가리킨다.
-- 화면 내 블록: `SEC_{역할}` — 페이지 단위 밴드.
-- 단일 컴포넌트: `CMP_{역할}` — 탭·페이지네이션·폼처럼 밴드가 아닌 것.
-- Figma 기본 이름(`Frame 1`, `Group 4` 등) 잔재 없음. 인스턴스 내부 레이어는 원본 이름을 유지한다.
+- 화면 프레임: `W-{번호}_{화면명}` / `M-{번호}_{화면명}`. 번호는 두 플랫폼에서 같은 화면을 가리킨다.
+- 화면 내 밴드: `SEC_{역할}`
+- 반복 단위: `CMP_{역할}`
+- 낱개 요소: `EL_{역할}`
+- Figma 기본 이름 잔재: 양쪽 페이지 모두 0건.
 
 ## 남은 작업
 
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| 실제 콘텐츠 반영 | 진행 | 헤딩·타이틀은 GatsBlog 문구로 교체 완료. 카드 본문은 서술형 플레이스홀더 |
-| 다크 모드 | 대기 | SDS `Color` 컬렉션의 `SDS Dark` 모드로 전환해 별도 프레임 제작 필요 |
-| AI 챗봇 위젯 | 대기 | SDS `AI Chatbot` 컴포넌트(`Device` 축) 미배치 |
-| 태블릿 | 폐기 | SDS `Responsive` 컬렉션에 Tablet 모드가 있으나 현 범위 제외 |
+| 구버전 SDS 섹션 정리 | 대기 | 삭제 권한이 없어 이름만 표식 처리. 수동 삭제 또는 승인 필요 |
+| 다크 모드 | 대기 | 실제 사이트에 테마 토글이 있다. 반전 팔레트로 별도 프레임 필요 |
+| ASK GATS 열린 상태 | 대기 | 챗 패널이 열렸을 때의 화면 미제작 |
+| 소개 스크롤 리빌 | 부분 | 실제 페이지는 스크롤 트리거 애니메이션. 최종 상태만 반영 |
 | 상세 디스크립션 | 대기 | 화면별 예외·분기·트리거 정의는 별도 문서로 |
-
-## 신규 제작 컴포넌트
-
-없음. 27개 화면 전부 Simple Design System 인스턴스로만 조립했다.
