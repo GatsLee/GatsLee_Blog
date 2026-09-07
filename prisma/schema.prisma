@@ -12,7 +12,7 @@ model Post {
   title          String
   slug           String    @unique
   content        String
-  category       String    // "devlog" | "troubleshooting" | "product" | "agent" | "blueprint"
+  category       String    // "journal" | "product" | "agent" | "build" | "case" — see src/lib/categories.ts
   tags           String    @default("[]") // JSON-encoded array
   published      Boolean   @default(true)
   locale         String    @default("ko") // "ko" | "en"
@@ -21,13 +21,22 @@ model Post {
   githubRepo     String    @default("") // e.g. "GatsLee/Page_Node"
   coverImage     String    @default("") // URL to cover image
   description    String    @default("") // SEO/preview excerpt
+  buildProgress  Int       @default(0)  // 0-100 build progress percentage
+  relatedPosts   String    @default("[]") // JSON array of related post IDs
 
   // Product/Agent structured fields (nullable — only used when category is "product" or "agent")
   demoVideo      String?   // URL to demo video
   demoImages     String?   // JSON array of image URLs: '["url1","url2"]'
+  externalLinks  String?   // JSON array: '[{"label":"GitHub","url":"https://..."}]'
   targetAudience String?
   purpose        String?
   expectedEffect String?
+
+  // Case study beats (nullable — only used when category is "case")
+  // JSON blob shaped by CaseBeats in src/lib/case-study.ts
+  caseBeats      String?
+
+  aiSummary      String    @default("") // AI-generated post summary
 
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -80,4 +89,56 @@ model ProgressItem {
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model PostChunk {
+  id           Int      @id @default(autoincrement())
+  postId       Int
+  postTitle    String
+  postSlug     String
+  postCategory String
+  content      String                  // 청크 텍스트 (200-500자)
+  embedding    String   @default("[]") // JSON float 배열 (768차원)
+  chunkIndex   Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([postId])
+}
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  sessionId String
+  role      String   // "user" | "assistant"
+  content   String
+  ip        String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+model SiteConfig {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique  // e.g. "about_ko", "about_en"
+  value     String   // JSON content
+  updatedAt DateTime @updatedAt
+}
+
+model FaqEntry {
+  id                     Int      @id @default(autoincrement())
+  slug                   String   @unique           // stable identifier (e.g. "intro_who")
+  qVariants              String                     // JSON array of question variants
+  a_ko                   String
+  a_en                   String
+  tags                   String   @default("[]")    // JSON array
+  isActive               Boolean  @default(true)
+  source                 String   @default("manual") // "manual" | "promoted" | "seed"
+  promotedFromMessageId  Int?                       // ChatMessage.id this FAQ was promoted from
+  upvotes                Int      @default(0)
+  downvotes              Int      @default(0)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([isActive])
 }

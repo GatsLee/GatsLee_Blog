@@ -1,0 +1,12 @@
+-- Adds Post.externalLinks.
+--
+-- This was previously a noop ("SELECT 1;") because the column was originally
+-- added to the running database with `prisma db push`. That left the migration
+-- chain unable to build a working database from scratch: a fresh volume (new
+-- deploy, disaster recovery, new dev machine) came up without the column, and
+-- every product query touching it failed.
+--
+-- Safe to make real: entrypoint.sh skips migrations already recorded by name in
+-- _prisma_migrations, so databases that got the column via db push never re-run
+-- this and won't hit "duplicate column name".
+ALTER TABLE "Post" ADD COLUMN "externalLinks" TEXT;
