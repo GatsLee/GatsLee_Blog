@@ -4,27 +4,30 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Tag,
   ChevronDown,
-  ImagePlus,
-  Video,
   X,
   Plus,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { uploadFile } from '@/lib/upload';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
+
+interface ExternalLink {
+  label: string;
+  url: string;
+}
 
 interface ProductSaveData {
   title: string;
   category: string;
   content: string;
   slug?: string;
-  coverImage?: string;
   description?: string;
   locale?: string;
   published?: boolean;
   tags?: string;
-  demoVideo?: string;
   demoImages?: string;
+  externalLinks?: string;
   targetAudience?: string;
   purpose?: string;
   expectedEffect?: string;
@@ -34,16 +37,14 @@ interface ProductEditorProps {
   initialTitle?: string;
   initialCategory?: string;
   initialContent?: string;
-  initialCoverImage?: string;
-  initialDemoVideo?: string;
   initialDemoImages?: string;
+  initialExternalLinks?: string;
   initialTargetAudience?: string;
   initialPurpose?: string;
   initialExpectedEffect?: string;
   initialLocale?: string;
   initialPublished?: boolean;
   initialTags?: string;
-  initialSlug?: string;
   initialDescription?: string;
   onSave: (data: ProductSaveData) => void;
   saving?: boolean;
@@ -57,16 +58,14 @@ export default function ProductEditor({
   initialTitle = '',
   initialCategory = 'product',
   initialContent = '',
-  initialCoverImage = '',
-  initialDemoVideo = '',
   initialDemoImages = '[]',
+  initialExternalLinks = '[]',
   initialTargetAudience = '',
   initialPurpose = '',
   initialExpectedEffect = '',
   initialLocale = 'ko',
   initialPublished = true,
   initialTags = '[]',
-  initialSlug = '',
   initialDescription = '',
   onSave,
   saving = false,
@@ -81,14 +80,16 @@ export default function ProductEditor({
   const parsedInitialImages: string[] = (() => {
     try { return JSON.parse(initialDemoImages); } catch { return []; }
   })();
+  const parsedInitialLinks: ExternalLink[] = (() => {
+    try { return JSON.parse(initialExternalLinks); } catch { return []; }
+  })();
 
   // State
   const [title, setTitle] = useState(initialTitle);
   const [category, setCategory] = useState(initialCategory);
   const [content, setContent] = useState(initialContent);
-  const [coverImage, setCoverImage] = useState(initialCoverImage);
-  const [demoVideo, setDemoVideo] = useState(initialDemoVideo);
   const [demoImages, setDemoImages] = useState<string[]>(parsedInitialImages);
+  const [externalLinks, setExternalLinks] = useState<ExternalLink[]>(parsedInitialLinks);
   const [targetAudience, setTargetAudience] = useState(initialTargetAudience);
   const [purpose, setPurpose] = useState(initialPurpose);
   const [expectedEffect, setExpectedEffect] = useState(initialExpectedEffect);
@@ -97,22 +98,11 @@ export default function ProductEditor({
   const [status, setStatus] = useState(initialStatus);
   const [techTags, setTechTags] = useState<string[]>(initialTechTags);
   const [tagInput, setTagInput] = useState('');
-  const [slug, setSlug] = useState(initialSlug);
-  const [slugManuallyEdited, setSlugManuallyEdited] = useState(!!initialSlug);
   const [description, setDescription] = useState(initialDescription);
 
   // Upload state
-  const [coverUploading, setCoverUploading] = useState(false);
   const [demoUploading, setDemoUploading] = useState(false);
-  const coverInputRef = useRef<HTMLInputElement>(null);
   const demoInputRef = useRef<HTMLInputElement>(null);
-
-  // Auto-generate slug from title
-  useEffect(() => {
-    if (slugManuallyEdited) return;
-    const auto = title.toLowerCase().replace(/[^a-z0-9가-힣]+/g, '-').replace(/^-|-$/g, '');
-    setSlug(auto);
-  }, [title, slugManuallyEdited]);
 
   // Stats
   const allText = [title, content, purpose, targetAudience, expectedEffect].join(' ');
@@ -120,23 +110,9 @@ export default function ProductEditor({
   const charCount = allText.replace(/\s/g, '').length;
   const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
-  const isUploading = coverUploading || demoUploading;
+  const isUploading = demoUploading;
 
   // Handlers
-  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setCoverUploading(true);
-    try {
-      const url = await uploadFile(file);
-      setCoverImage(url);
-    } catch { alert('Cover upload failed.'); }
-    finally {
-      setCoverUploading(false);
-      if (coverInputRef.current) coverInputRef.current.value = '';
-    }
-  };
-
   const handleDemoImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files?.length) return;
@@ -174,18 +150,19 @@ export default function ProductEditor({
   const handleSave = () => {
     if (!title.trim()) return;
     const tags = JSON.stringify([status, ...techTags]);
+    const autoSlug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-{2,}/g, '-').replace(/^-|-$/g, '') || `product-${Date.now()}`;
+    const filteredLinks = externalLinks.filter(l => l.label.trim() && l.url.trim());
     onSave({
       title,
       category,
       content,
-      slug,
-      coverImage,
+      slug: autoSlug,
       description,
       locale,
       published,
       tags,
-      demoVideo,
       demoImages: JSON.stringify(demoImages),
+      externalLinks: JSON.stringify(filteredLinks),
       targetAudience,
       purpose,
       expectedEffect,
@@ -233,32 +210,10 @@ export default function ProductEditor({
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-3xl mx-auto px-16 pt-12 pb-8">
 
-            {/* Cover image */}
-            {coverImage ? (
-              <div className="relative group mb-6">
-                <img src={coverImage} alt="Cover" className="w-full h-48 object-cover rounded-lg card-border" />
-                <button
-                  onClick={() => setCoverImage('')}
-                  className="absolute top-2 right-2 bg-background/80 text-muted hover:text-foreground rounded px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  remove
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => coverInputRef.current?.click()}
-                disabled={coverUploading}
-                className="w-full h-32 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center text-muted hover:bg-hover hover:border-accent/40 transition-colors bg-background gap-1 text-xs mb-6"
-              >
-                <ImagePlus size={20} />
-                <span>{coverUploading ? 'Uploading…' : 'Add Cover Image'}</span>
-              </button>
-            )}
-
             {/* Title */}
             <input
               className="w-full bg-transparent outline-none text-4xl md:text-[2.75rem] font-bold text-foreground tracking-tight mb-6 placeholder-muted/25"
-              style={{ fontFamily: 'Archivo, sans-serif' }}
+              style={{ fontFamily: "'Manrope', 'Pretendard', sans-serif" }}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Product Name"
@@ -295,20 +250,6 @@ export default function ProductEditor({
             <section className="mb-8">
               <h3 className="text-[10px] font-bold text-muted tracking-widest mb-4 uppercase">Demo</h3>
 
-              {/* Demo Video */}
-              <div className="mb-5">
-                <label className="block text-xs text-muted mb-2">Demo Video URL</label>
-                <div className="flex items-center gap-2">
-                  <Video size={14} className="text-muted shrink-0" />
-                  <input
-                    value={demoVideo}
-                    onChange={(e) => setDemoVideo(e.target.value)}
-                    placeholder="https://youtube.com/watch?v=... or Vimeo URL"
-                    className="w-full px-3 py-2 bg-background card-border rounded text-sm text-foreground focus:outline-none focus:border-accent/50 transition-colors placeholder:text-muted/40 font-mono"
-                  />
-                </div>
-              </div>
-
               {/* Demo Images */}
               <div>
                 <label className="block text-xs text-muted mb-2">Screenshots</label>
@@ -334,6 +275,53 @@ export default function ProductEditor({
                   </button>
                 </div>
               </div>
+            </section>
+
+            <div className="w-full h-px bg-border mb-8" />
+
+            {/* ── External Links ──────────────────────────────────────── */}
+            <section className="mb-8">
+              <h3 className="text-[10px] font-bold text-muted tracking-widest mb-4 uppercase">Links</h3>
+              <div className="space-y-2 mb-3">
+                {externalLinks.map((link, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <LinkIcon size={13} className="text-muted shrink-0" />
+                    <input
+                      value={link.label}
+                      onChange={(e) => {
+                        const updated = [...externalLinks];
+                        updated[i] = { ...updated[i], label: e.target.value };
+                        setExternalLinks(updated);
+                      }}
+                      placeholder="Label (e.g. GitHub)"
+                      className="w-28 px-3 py-2 bg-background card-border rounded text-xs text-foreground focus:outline-none focus:border-accent/50 transition-colors placeholder:text-muted/40"
+                    />
+                    <input
+                      value={link.url}
+                      onChange={(e) => {
+                        const updated = [...externalLinks];
+                        updated[i] = { ...updated[i], url: e.target.value };
+                        setExternalLinks(updated);
+                      }}
+                      placeholder="https://..."
+                      className="flex-1 px-3 py-2 bg-background card-border rounded text-xs text-foreground focus:outline-none focus:border-accent/50 transition-colors placeholder:text-muted/40"
+                    />
+                    <button
+                      onClick={() => setExternalLinks(prev => prev.filter((_, j) => j !== i))}
+                      className="p-1 text-muted hover:text-foreground transition-colors"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => setExternalLinks(prev => [...prev, { label: '', url: '' }])}
+                className="flex items-center gap-1.5 text-xs text-muted hover:text-foreground transition-colors"
+              >
+                <Plus size={14} />
+                <span>Add Link</span>
+              </button>
             </section>
 
             <div className="w-full h-px bg-border mb-8" />
@@ -448,17 +436,6 @@ export default function ProductEditor({
               />
             </div>
 
-            {/* Slug */}
-            <div className="mb-5">
-              <label className="block text-xs text-muted mb-2">Slug</label>
-              <input
-                value={slug}
-                onChange={(e) => { setSlug(e.target.value); setSlugManuallyEdited(true); }}
-                placeholder="auto-generated-slug"
-                className="w-full px-3 py-2 bg-background card-border rounded text-xs text-foreground font-mono focus:outline-none focus:border-accent/50 transition-colors placeholder:text-muted/40"
-              />
-            </div>
-
             {/* SEO Description */}
             <div className="mb-5">
               <label className="block text-xs text-muted mb-2">SEO Description</label>
@@ -490,7 +467,6 @@ export default function ProductEditor({
       </div>
 
       {/* Hidden file inputs */}
-      <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
       <input ref={demoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleDemoImageUpload} />
     </div>
   );

@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const token = await signToken({ sub: user.id, role: "admin" });
     const cookieOptions = getTokenCookieOptions(token);
 
-    const response = NextResponse.json({ success: true });
+    const response = NextResponse.json({ success: true, token });
     response.cookies.set(cookieOptions);
 
     console.log("[LOGIN] Success! Cookie set");

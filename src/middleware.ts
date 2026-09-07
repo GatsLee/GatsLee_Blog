@@ -37,7 +37,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get("auth-token")?.value;
+  const cookieToken = request.cookies.get("auth-token")?.value;
+  const authHeader = request.headers.get("authorization");
+  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
+  const token = cookieToken ?? bearerToken;
 
   if (!token) {
     if (isProtectedPage) {

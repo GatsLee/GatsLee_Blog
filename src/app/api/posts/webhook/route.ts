@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { title, content, category, tags } = body;
+    const { title, content, category, tags, published, description, locale } = body;
 
     if (!title || !content) {
       return NextResponse.json(
@@ -33,8 +33,9 @@ export async function POST(request: NextRequest) {
 
     const slug = (title as string)
       .toLowerCase()
-      .replace(/[^a-z0-9가-힣]+/g, "-")
-      .replace(/^-|-$/g, "");
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/-{2,}/g, "-")
+      .replace(/^-|-$/g, "") || `post-${Date.now()}`;
 
     // Ensure unique slug by appending timestamp if needed
     const existingPost = await prisma.post.findUnique({ where: { slug } });
@@ -47,9 +48,11 @@ export async function POST(request: NextRequest) {
         title,
         slug: finalSlug,
         content,
-        category: category || "troubleshooting",
+        category: category || "journal",
         tags: tags || "[]",
-        published: true,
+        description: description || "",
+        locale: locale || "ko",
+        published: published ?? true,
       },
     });
 

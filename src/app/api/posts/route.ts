@@ -35,29 +35,39 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       title, slug, content, category, tags, locale, translationKey,
-      coverImage, description, published,
-      demoVideo, demoImages, targetAudience, purpose, expectedEffect,
+      coverImage, description, published, buildProgress, relatedPosts,
+      demoVideo, demoImages, externalLinks, targetAudience, purpose, expectedEffect,
+      caseBeats,
+      createdAt,
     } = body;
 
-    if (!title || !content || !category) {
+    if (!title || !category) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    const postSlug =
+    let postSlug =
       slug ||
       title
         .toLowerCase()
-        .replace(/[^a-z0-9가-힣]+/g, "-")
-        .replace(/^-|-$/g, "");
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/-{2,}/g, "-")
+        .replace(/^-|-$/g, "") ||
+      `post-${Date.now()}`;
+
+    // Ensure slug uniqueness
+    const existing = await prisma.post.findUnique({ where: { slug: postSlug } });
+    if (existing) {
+      postSlug = `${postSlug}-${Date.now()}`;
+    }
 
     const post = await prisma.post.create({
       data: {
         title,
         slug: postSlug,
-        content,
+        content: content || "",
         category,
         tags: tags || "[]",
         locale: locale || "ko",
@@ -65,11 +75,16 @@ export async function POST(request: NextRequest) {
         coverImage: coverImage || "",
         description: description || "",
         published: published !== undefined ? published : true,
+        buildProgress: typeof buildProgress === 'number' ? buildProgress : 0,
+        relatedPosts: relatedPosts || "[]",
         demoVideo: demoVideo || null,
         demoImages: demoImages || null,
+        externalLinks: externalLinks || null,
         targetAudience: targetAudience || null,
         purpose: purpose || null,
         expectedEffect: expectedEffect || null,
+        caseBeats: caseBeats || null,
+        ...(createdAt ? { createdAt: new Date(createdAt) } : {}),
       },
     });
 

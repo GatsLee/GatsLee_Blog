@@ -2,17 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import NotionEditor, { parseMarkdownToBlocks } from "@/components/editor/NotionEditor";
-import type { Block } from "@/components/editor/NotionEditor";
+import NotionEditor from "@/components/editor/NotionEditor";
 import ProductEditor from "@/components/editor/ProductEditor";
-
-const ROUTE_MAP: Record<string, string> = {
-  product: "/products",
-  agent: "/products",
-  blueprint: "/blueprint",
-  devlog: "/insights",
-  troubleshooting: "/insights",
-};
+import BuildEditor from "@/components/editor/BuildEditor";
+import CaseStudyEditor, { type CaseSaveData } from "@/components/editor/CaseStudyEditor";
+import { routeFor } from "@/lib/categories";
 
 export default function EditPostPage({
   params,
@@ -21,7 +15,7 @@ export default function EditPostPage({
 }) {
   const [postId, setPostId] = useState<string>("");
   const [postData, setPostData] = useState<Record<string, unknown> | null>(null);
-  const [initialBlocks, setInitialBlocks] = useState<Block[] | undefined>(undefined);
+  const [initialContent, setInitialContent] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -36,7 +30,7 @@ export default function EditPostPage({
         if (res.ok) {
           const post = await res.json();
           setPostData(post);
-          setInitialBlocks(parseMarkdownToBlocks(post.content || ""));
+          setInitialContent(post.content || "");
         }
       } catch {
         /* ignore — editor opens with empty state */
@@ -53,10 +47,11 @@ export default function EditPostPage({
     category: string;
     content: string;
     slug?: string;
-    coverImage?: string;
     description?: string;
+    tags?: string;
     locale?: string;
     published?: boolean;
+    createdAt?: string;
   }) => {
     if (!data.title.trim() || !data.content.trim()) return;
     setSaving(true);
@@ -68,8 +63,7 @@ export default function EditPostPage({
       });
       if (res.ok) {
         const post = await res.json();
-        const basePath = ROUTE_MAP[data.category] || "/insights";
-        router.push(`${basePath}/${post.slug}`);
+        router.push(routeFor(data.category, post.slug));
         router.refresh();
       }
     } catch (error) {
@@ -92,6 +86,7 @@ export default function EditPostPage({
     tags?: string;
     demoVideo?: string;
     demoImages?: string;
+    externalLinks?: string;
     targetAudience?: string;
     purpose?: string;
     expectedEffect?: string;
@@ -106,8 +101,29 @@ export default function EditPostPage({
       });
       if (res.ok) {
         const post = await res.json();
-        const basePath = ROUTE_MAP[data.category] || "/products";
-        router.push(`${basePath}/${post.slug}`);
+        router.push(routeFor(data.category, post.slug));
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Failed to save:", error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Save handler for CaseStudyEditor
+  const handleCaseSave = async (data: CaseSaveData) => {
+    if (!data.title.trim()) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/posts/${postId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        const post = await res.json();
+        router.push(routeFor("case", post.slug));
         router.refresh();
       }
     } catch (error) {
@@ -133,12 +149,70 @@ export default function EditPostPage({
     );
   }
 
-  const category = (postData.category as string) || "devlog";
+  const category = (postData.category as string) || "journal";
 
-  // Blueprint posts are edited via the blueprint editor
-  if (category === "blueprint") {
-    router.push("/write/blueprint");
-    return null;
+  // Case → CaseStudyEditor
+  if (category === "case") {
+    return (
+      <CaseStudyEditor
+        initialTitle={(postData.title as string) || ""}
+        initialContent={(postData.content as string) || ""}
+        initialCaseBeats={(postData.caseBeats as string) || null}
+        initialExternalLinks={(postData.externalLinks as string) || "[]"}
+        initialLocale={(postData.locale as string) || "ko"}
+        initialPublished={postData.published !== false}
+        initialTags={(postData.tags as string) || "[]"}
+        initialDescription={(postData.description as string) || ""}
+        onSave={handleCaseSave}
+        saving={saving}
+      />
+    );
+  }
+
+  // Build → BuildEditor
+  if (category === "build") {
+    const handleBuildSave = async (data: {
+      title: string;
+      category: string;
+      content: string;
+      slug?: string;
+      description?: string;
+      published?: boolean;
+      tags?: string;
+      relatedPosts?: string;
+      createdAt?: string;
+    }) => {
+      if (!data.title.trim()) return;
+      setSaving(true);
+      try {
+        const res = await fetch(`/api/posts/${postId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        if (res.ok) {
+          router.push("/admin");
+          router.refresh();
+        }
+      } catch (error) {
+        console.error("Failed to save:", error);
+      } finally {
+        setSaving(false);
+      }
+    };
+
+    return (
+      <BuildEditor
+        initialTitle={(postData.title as string) || ""}
+        initialDescription={(postData.description as string) || ""}
+        initialTags={(postData.tags as string) || "[]"}
+        initialRelatedPosts={(postData.relatedPosts as string) || "[]"}
+        initialPublished={postData.published !== false}
+        initialCreatedAt={(postData.createdAt as string) || undefined}
+        onSave={handleBuildSave}
+        saving={saving}
+      />
+    );
   }
 
   // Product/Agent → ProductEditor
@@ -148,16 +222,14 @@ export default function EditPostPage({
         initialTitle={(postData.title as string) || ""}
         initialCategory={category}
         initialContent={(postData.content as string) || ""}
-        initialCoverImage={(postData.coverImage as string) || ""}
-        initialDemoVideo={(postData.demoVideo as string) || ""}
         initialDemoImages={(postData.demoImages as string) || "[]"}
+        initialExternalLinks={(postData.externalLinks as string) || "[]"}
         initialTargetAudience={(postData.targetAudience as string) || ""}
         initialPurpose={(postData.purpose as string) || ""}
         initialExpectedEffect={(postData.expectedEffect as string) || ""}
         initialLocale={(postData.locale as string) || "ko"}
         initialPublished={postData.published !== false}
         initialTags={(postData.tags as string) || "[]"}
-        initialSlug={(postData.slug as string) || ""}
         initialDescription={(postData.description as string) || ""}
         onSave={handleProductSave}
         saving={saving}
@@ -168,13 +240,14 @@ export default function EditPostPage({
   // Devlog/Troubleshooting → NotionEditor
   return (
     <NotionEditor
-      initialBlocks={initialBlocks}
+      initialContent={initialContent}
       initialCategory={category}
       initialSlug={(postData.slug as string) || ""}
-      initialCoverImage={(postData.coverImage as string) || ""}
       initialDescription={(postData.description as string) || ""}
+      initialTags={(postData.tags as string) || "[]"}
       initialLocale={(postData.locale as string) || "ko"}
       initialPublished={postData.published !== false}
+      initialCreatedAt={(postData.createdAt as string) || undefined}
       onSave={handleNotionSave}
       saving={saving}
     />
