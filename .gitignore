@@ -50,3 +50,6 @@ traefik/
 acme.json
 # test artifacts
 tests/reports/
+
+# uploaded media (docker volume in prod)
+/public/uploads/
