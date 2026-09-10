@@ -5,14 +5,9 @@ export const translations = {
     // Navigation
     nav: {
       home: "홈",
-      cases: "케이스 스터디",
       resume: "이력서",
-      about: "소개",
-      // Relabelled from "포트폴리오" — the engineering artifacts are supporting
-      // evidence now; "portfolio" belongs to the case studies.
-      products: "빌드",
-      insights: "저널",
-      connect: "방명록",
+      products: "프로덕트",
+      insights: "포스트",
       write: "포스트 작성 (관리자)",
       admin: "관리자 대시보드",
     },
@@ -364,12 +359,9 @@ export const translations = {
   en: {
     nav: {
       home: "Home",
-      cases: "Case Studies",
       resume: "Resume",
-      about: "About",
-      products: "Builds",
-      insights: "Journal",
-      connect: "Guestbook",
+      products: "Products",
+      insights: "Posts",
       write: "Post Write (Admin)",
       admin: "Admin Dashboard",
     },

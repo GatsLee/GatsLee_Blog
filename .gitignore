@@ -53,3 +53,4 @@ tests/reports/
 
 # uploaded media (docker volume in prod)
 /public/uploads/
+prisma/*.bak-*

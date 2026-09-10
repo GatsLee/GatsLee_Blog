@@ -31,13 +31,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Moved out of the top nav — the guestbook isn't a hiring surface. */}
-          <Link
-            href="/connect"
-            className="editorial-label text-muted hover:text-foreground transition-colors"
-          >
-            {t.nav.connect}
-          </Link>
         </div>
 
         <p className="text-sm leading-relaxed text-secondary font-light max-w-lg mb-4">

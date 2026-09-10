@@ -31,15 +31,11 @@ export default function TopNav({ isAdmin }: { isAdmin: boolean }) {
     return () => { document.body.style.overflow = ""; };
   }, [mobileOpen]);
 
-  // Ordered by what a hiring reader needs first. Guestbook lives in the footer —
-  // it isn't a hiring surface.
+  // 홈 · 프로덕트 · 포스트 셋. 이력서는 유틸로 오른쪽에 붙는다.
   const navItems = [
     { href: "/", label: t.nav.home },
-    { href: "/cases", label: t.nav.cases },
-    { href: "/resume", label: t.nav.resume },
     { href: "/products", label: t.nav.products },
     { href: "/insights", label: t.nav.insights },
-    { href: "/about", label: t.nav.about },
   ];
 
   const isActive = (href: string) =>
@@ -102,6 +98,17 @@ export default function TopNav({ isAdmin }: { isAdmin: boolean }) {
 
           {/* Right controls */}
           <div className="flex items-center gap-6">
+            {/* 이력서는 새 탭에서 PDF로 연다. 화면이 아니라 문서라서 네비가 아니라 유틸이다. */}
+            <Link
+              href="/resume"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="editorial-label text-foreground hover:opacity-60 transition-opacity hidden md:inline-flex items-center gap-1"
+            >
+              {t.nav.resume}
+              <span aria-hidden>↗</span>
+            </Link>
+
             {/* Language Toggle */}
             {mounted && (
               <button

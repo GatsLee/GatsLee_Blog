@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import NotionEditor from "@/components/editor/NotionEditor";
 import ProductEditor from "@/components/editor/ProductEditor";
 import BuildEditor from "@/components/editor/BuildEditor";
-import CaseStudyEditor, { type CaseSaveData } from "@/components/editor/CaseStudyEditor";
 import { routeFor } from "@/lib/categories";
 
 export default function EditPostPage({
@@ -111,27 +110,6 @@ export default function EditPostPage({
     }
   };
 
-  // Save handler for CaseStudyEditor
-  const handleCaseSave = async (data: CaseSaveData) => {
-    if (!data.title.trim()) return;
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/posts/${postId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (res.ok) {
-        const post = await res.json();
-        router.push(routeFor("case", post.slug));
-        router.refresh();
-      }
-    } catch (error) {
-      console.error("Failed to save:", error);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -151,23 +129,6 @@ export default function EditPostPage({
 
   const category = (postData.category as string) || "journal";
 
-  // Case → CaseStudyEditor
-  if (category === "case") {
-    return (
-      <CaseStudyEditor
-        initialTitle={(postData.title as string) || ""}
-        initialContent={(postData.content as string) || ""}
-        initialCaseBeats={(postData.caseBeats as string) || null}
-        initialExternalLinks={(postData.externalLinks as string) || "[]"}
-        initialLocale={(postData.locale as string) || "ko"}
-        initialPublished={postData.published !== false}
-        initialTags={(postData.tags as string) || "[]"}
-        initialDescription={(postData.description as string) || ""}
-        onSave={handleCaseSave}
-        saving={saving}
-      />
-    );
-  }
 
   // Build → BuildEditor
   if (category === "build") {

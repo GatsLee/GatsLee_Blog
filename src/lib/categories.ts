@@ -1,30 +1,26 @@
 /**
  * Single source of truth for post categories and their routes.
  *
- * Previously each of rag.ts / write / write-edit / BuildProgress / sitemap / feed
- * kept its own ROUTE_MAP, and they had drifted apart (one mapped "blueprint" to a
- * /blueprint route that never existed). Import from here instead.
+ * Previously each of rag.ts / write / write-edit / sitemap / feed kept its own
+ * ROUTE_MAP, and they had drifted apart. Import from here instead.
+ *
+ * 2026-09-10: 프로덕트가 Post의 카테고리 값에서 독립 엔티티(`Product`)로 나갔고,
+ * 케이스 스터디는 글이 0건이라 IA에서 뺐다. 남은 것은 포스트 두 종류뿐이다.
  */
 
-export const CATEGORIES = ["journal", "product", "agent", "build", "case"] as const;
+export const CATEGORIES = ["journal", "build"] as const;
 
 export type Category = (typeof CATEGORIES)[number];
 
 export const CATEGORY_ROUTE: Record<Category, string> = {
   journal: "/insights",
-  product: "/products",
-  agent: "/products",
   build: "/insights",
-  case: "/cases",
 };
 
 /** Human labels for admin/editor dropdowns. */
 export const CATEGORY_LABEL: Record<Category, { ko: string; en: string }> = {
   journal: { ko: "저널", en: "Journal" },
-  product: { ko: "프로덕트", en: "Product" },
-  agent: { ko: "에이전트", en: "Agent" },
   build: { ko: "빌드 로그", en: "Build Log" },
-  case: { ko: "케이스 스터디", en: "Case Study" },
 };
 
 export function isCategory(value: string): value is Category {

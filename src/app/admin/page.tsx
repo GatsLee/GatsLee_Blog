@@ -4,13 +4,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Settings, Trash2, Pencil, X, Check, FileText, MessageSquare, Users, Pin, ChevronLeft, ChevronRight } from "lucide-react";
 import ChatAnalyticsTab from "@/components/admin/ChatAnalyticsTab";
-import AboutEditorTab from "@/components/admin/AboutEditorTab";
 import ResumeEditorTab from "@/components/admin/ResumeEditorTab";
 import RAGManagementTab from "@/components/admin/RAGManagementTab";
 import FaqManagementTab from "@/components/admin/FaqManagementTab";
 import { CATEGORIES } from "@/lib/categories";
 
-type Tab = "posts" | "comments" | "guestbook" | "chat" | "rag" | "faq" | "about" | "resume";
+type Tab = "posts" | "comments" | "chat" | "rag" | "faq" | "resume";
 
 interface Post {
   id: number;
@@ -45,7 +44,6 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>("posts");
   const [posts, setPosts] = useState<Post[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [guestEntries, setGuestEntries] = useState<GuestEntry[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
   const [postCategoryFilter, setPostCategoryFilter] = useState<string>("journal");
@@ -54,7 +52,7 @@ export default function AdminPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
 
-  const tabLabels: Record<Tab, string> = { posts: "Posts", comments: "Comments", guestbook: "Guestbook", chat: "Chat", rag: "RAG", faq: "FAQ", about: "About", resume: "Resume" };
+  const tabLabels: Record<Tab, string> = { posts: "Posts", comments: "Comments", chat: "Chat", rag: "RAG", faq: "FAQ", resume: "Resume" };
 
   useEffect(() => {
     if (activeTab === "posts") {
@@ -66,11 +64,6 @@ export default function AdminPage() {
       fetch("/api/comments")
         .then((r) => r.json())
         .then(setComments)
-        .catch(() => {});
-    } else {
-      fetch("/api/guestbook")
-        .then((r) => r.json())
-        .then(setGuestEntries)
         .catch(() => {});
     }
   }, [activeTab]);
@@ -98,7 +91,6 @@ export default function AdminPage() {
     const urlMap: Record<string, string> = {
       posts: `/api/posts/${id}`,
       comments: `/api/comments/${id}`,
-      guestbook: `/api/guestbook/${id}`,
     };
 
     const res = await fetch(urlMap[type], { method: "DELETE" });
@@ -108,7 +100,6 @@ export default function AdminPage() {
         setSelectedIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
       }
       if (type === "comments") setComments((prev) => prev.filter((c) => c.id !== id));
-      if (type === "guestbook") setGuestEntries((prev) => prev.filter((e) => e.id !== id));
     }
   };
 
@@ -186,14 +177,12 @@ export default function AdminPage() {
     }
   };
 
-  const handleSaveEdit = async (type: "comments" | "guestbook", id: number) => {
+  const handleSaveEdit = async (type: "comments", id: number) => {
     const urlMap = {
       comments: `/api/comments/${id}`,
-      guestbook: `/api/guestbook/${id}`,
     };
     const bodyMap = {
       comments: { content: editValue },
-      guestbook: { message: editValue },
     };
 
     const res = await fetch(urlMap[type], {
@@ -208,22 +197,18 @@ export default function AdminPage() {
           prev.map((c) => (c.id === id ? { ...c, content: editValue } : c))
         );
       } else {
-        setGuestEntries((prev) =>
-          prev.map((e) => (e.id === id ? { ...e, message: editValue } : e))
-        );
       }
       setEditingId(null);
       setEditValue("");
     }
   };
 
-  const tabs: Tab[] = ["posts", "comments", "guestbook", "chat", "rag", "faq", "about", "resume"];
+  const tabs: Tab[] = ["posts", "comments", "chat", "rag", "faq", "resume"];
 
   const getTabIcon = (tab: Tab) => {
     switch (tab) {
       case "posts": return <FileText size={16} />;
       case "comments": return <MessageSquare size={16} />;
-      case "guestbook": return <Users size={16} />;
     }
   };
 
@@ -236,7 +221,7 @@ export default function AdminPage() {
           Admin Dashboard
         </h1>
         <p className="text-sm text-muted ml-11">
-          Manage your posts, comments, and guestbook entries
+          Manage your posts, comments, and chatbot
         </p>
       </div>
 
@@ -455,91 +440,6 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Guestbook Tab */}
-      {activeTab === "guestbook" && (
-        <div className="bg-background card-border rounded-xl overflow-hidden shadow-lg">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-muted text-xs font-mono uppercase bg-background">
-                <th className="text-left p-4">Author</th>
-                <th className="text-left p-4">Message</th>
-                <th className="text-left p-4 hidden md:table-cell">Date</th>
-                <th className="text-right p-4">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {guestEntries.map((entry) => (
-                <tr key={entry.id} className="border-b border-border/50 hover:bg-surface transition-colors">
-                  <td className="p-4">
-                    <span className="text-accent text-xs font-mono bg-accent/10 px-2 py-1 rounded">{entry.author}</span>
-                  </td>
-                  <td className="p-4">
-                    {editingId === entry.id ? (
-                      <input
-                        type="text"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        className="w-full bg-background card-border rounded px-3 py-2 text-foreground text-sm focus:border-accent focus:outline-none"
-                        autoFocus
-                      />
-                    ) : (
-                      <span className="text-secondary text-sm">{entry.message.slice(0, 80)}{entry.message.length > 80 ? "..." : ""}</span>
-                    )}
-                  </td>
-                  <td className="p-4 hidden md:table-cell text-secondary text-xs font-mono">
-                    {new Date(entry.createdAt).toISOString().split("T")[0]}
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {editingId === entry.id ? (
-                        <>
-                          <button
-                            onClick={() => handleSaveEdit("guestbook", entry.id)}
-                            className="text-accent hover:text-accent/90 transition-colors cursor-pointer p-2 hover:bg-surface rounded"
-                          >
-                            <Check size={14} />
-                          </button>
-                          <button
-                            onClick={() => { setEditingId(null); setEditValue(""); }}
-                            className="text-muted hover:text-foreground transition-colors cursor-pointer p-2 hover:bg-surface rounded"
-                          >
-                            <X size={14} />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => { setEditingId(entry.id); setEditValue(entry.message); }}
-                            className="text-muted hover:text-accent transition-colors cursor-pointer p-2 hover:bg-surface rounded"
-                            title="Edit"
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete("guestbook", entry.id)}
-                            className="text-muted hover:text-red-500 transition-colors cursor-pointer p-2 hover:bg-surface rounded"
-                            title="Delete"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {guestEntries.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="p-12 text-center text-secondary font-mono text-sm">
-                    No items found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-
       {/* Chat Analytics Tab */}
       {activeTab === "chat" && <ChatAnalyticsTab />}
 
@@ -550,7 +450,6 @@ export default function AdminPage() {
       {activeTab === "faq" && <FaqManagementTab />}
 
       {/* About Editor Tab */}
-      {activeTab === "about" && <AboutEditorTab />}
 
       {activeTab === "resume" && <ResumeEditorTab />}
     </div>

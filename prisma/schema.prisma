@@ -7,46 +7,92 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model Product {
+  id      Int    @id @default(autoincrement())
+  slug    String @unique
+  name    String
+  tagline String @default("") // 한 줄 요약
+  type    String // "app" | "web" | "agent"
+  stage   String @default("planning") // "planning" | "building" | "operating"
+  stamp   String @default("") // 도장 문구: "기획 완료" | "개발 중" | "운영 중" | "배포됨"
+
+  periodStart String  @default("") // "2026.07"
+  periodEnd   String  @default("") // "" 이면 ongoing 참조
+  ongoing     Boolean @default(false)
+  roles       String  @default("[]") // JSON: ["기획","개발"]
+  headcount   Int     @default(1)
+  useCase     String  @default("") // 유형: "서비스" | "자체 도구" ...
+  audience    String  @default("") // 타겟
+
+  coverImage String @default("") // 대표 이미지 URL
+  summary    String @default("[]") // JSON: 목록 카드의 요점 3줄
+  stack      String @default("[]") // JSON: 스택 칩
+  links      String @default("[]") // JSON: [{"label":"GitHub","url":"..."}]
+
+  problemBody  String @default("") // 문제 서술
+  evidence     String @default("{}") // JSON: {quote, source, numbers:[{value,label}], note}
+  features     String @default("[]") // JSON: [{label, sub, body, shots:[]}]
+  flowEmbedUrl String @default("") // 서비스 플로우 Figma 임베드
+
+  published Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts Post[]
+
+  @@index([published, sortOrder])
+}
+
 model Post {
-  id             Int       @id @default(autoincrement())
+  id             Int     @id @default(autoincrement())
   title          String
-  slug           String    @unique
+  slug           String  @unique
   content        String
-  category       String    // "journal" | "product" | "agent" | "build" | "case" — see src/lib/categories.ts
-  tags           String    @default("[]") // JSON-encoded array
-  published      Boolean   @default(true)
-  locale         String    @default("ko") // "ko" | "en"
-  translationKey String?   // same value links ko/en versions of same post
-  pinned         Boolean   @default(false) // exactly one post pinned at a time
-  githubRepo     String    @default("") // e.g. "GatsLee/Page_Node"
-  coverImage     String    @default("") // URL to cover image
-  description    String    @default("") // SEO/preview excerpt
-  buildProgress  Int       @default(0)  // 0-100 build progress percentage
-  relatedPosts   String    @default("[]") // JSON array of related post IDs
+  category       String // "journal" | "product" | "agent" | "build" | "case" — see src/lib/categories.ts
+  tags           String  @default("[]") // JSON-encoded array
+  published      Boolean @default(true)
+  locale         String  @default("ko") // "ko" | "en"
+  translationKey String? // same value links ko/en versions of same post
+  pinned         Boolean @default(false) // exactly one post pinned at a time
+  githubRepo     String  @default("") // e.g. "GatsLee/Page_Node"
+  coverImage     String  @default("") // URL to cover image
+  description    String  @default("") // SEO/preview excerpt
+  buildProgress  Int     @default(0) // 0-100 build progress percentage
+  relatedPosts   String  @default("[]") // JSON array of related post IDs
 
   // Product/Agent structured fields (nullable — only used when category is "product" or "agent")
-  demoVideo      String?   // URL to demo video
-  demoImages     String?   // JSON array of image URLs: '["url1","url2"]'
-  externalLinks  String?   // JSON array: '[{"label":"GitHub","url":"https://..."}]'
+  demoVideo      String? // URL to demo video
+  demoImages     String? // JSON array of image URLs: '["url1","url2"]'
+  externalLinks  String? // JSON array: '[{"label":"GitHub","url":"https://..."}]'
   targetAudience String?
   purpose        String?
   expectedEffect String?
 
   // Case study beats (nullable — only used when category is "case")
   // JSON blob shaped by CaseBeats in src/lib/case-study.ts
-  caseBeats      String?
+  caseBeats String?
 
-  aiSummary      String    @default("") // AI-generated post summary
+  aiSummary String @default("") // AI-generated post summary
 
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  comments       Comment[]
+  // 프로덕트 연결과 목록 표시 (IA_PS_001 / IA_PS_002)
+  productId   Int?
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  takeaway    String   @default("") // 목록에 뜨는 한 줄 결론
+  seriesKey   String   @default("") // 같은 값이면 한 시리즈
+  seriesOrder Int      @default(0)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  comments  Comment[]
+
+  @@index([productId])
 }
 
 model MediaAsset {
   id        Int      @id @default(autoincrement())
   filename  String
-  url       String   // "/uploads/1234-image.png"
+  url       String // "/uploads/1234-image.png"
   mimeType  String
   size      Int
   createdAt DateTime @default(now())
@@ -67,28 +113,10 @@ model Comment {
   createdAt DateTime @default(now())
 }
 
-model GuestbookEntry {
-  id        Int      @id @default(autoincrement())
-  author    String
-  message   String
-  createdAt DateTime @default(now())
-}
-
 model AdminUser {
   id           Int    @id @default(autoincrement())
   username     String @unique
   passwordHash String
-}
-
-model ProgressItem {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String   @default("")
-  category    String   // "hardware", "software", "network", "ai"
-  completed   Boolean  @default(false)
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
 model PostChunk {
@@ -97,7 +125,7 @@ model PostChunk {
   postTitle    String
   postSlug     String
   postCategory String
-  content      String                  // 청크 텍스트 (200-500자)
+  content      String // 청크 텍스트 (200-500자)
   embedding    String   @default("[]") // JSON float 배열 (768차원)
   chunkIndex   Int
   createdAt    DateTime @default(now())
@@ -109,10 +137,19 @@ model PostChunk {
 model ChatMessage {
   id        Int      @id @default(autoincrement())
   sessionId String
-  role      String   // "user" | "assistant"
+  role      String // "user" | "assistant"
   content   String
   ip        String   @default("")
   createdAt DateTime @default(now())
+
+  // 관측 (IA_AD_0020401 세션 상세)
+  chunkIds String   @default("[]") // JSON: 답변 근거로 쓴 PostChunk id 배열
+  tier     String   @default("") // 4-Tier 라우팅 중 어디로 갔는지
+  mlGate   Boolean? // ML 게이트 통과 여부. null이면 게이트를 안 거침
+  fallback Boolean  @default(false)
+  ttftMs   Int? // 첫 토큰까지
+  totalMs  Int? // 총 생성 시간
+  feedback String   @default("") // "" | "up" | "down"
 
   @@index([sessionId])
   @@index([createdAt])
@@ -120,25 +157,25 @@ model ChatMessage {
 
 model SiteConfig {
   id        Int      @id @default(autoincrement())
-  key       String   @unique  // e.g. "about_ko", "about_en"
-  value     String   // JSON content
+  key       String   @unique // e.g. "about_ko", "about_en"
+  value     String // JSON content
   updatedAt DateTime @updatedAt
 }
 
 model FaqEntry {
-  id                     Int      @id @default(autoincrement())
-  slug                   String   @unique           // stable identifier (e.g. "intro_who")
-  qVariants              String                     // JSON array of question variants
-  a_ko                   String
-  a_en                   String
-  tags                   String   @default("[]")    // JSON array
-  isActive               Boolean  @default(true)
-  source                 String   @default("manual") // "manual" | "promoted" | "seed"
-  promotedFromMessageId  Int?                       // ChatMessage.id this FAQ was promoted from
-  upvotes                Int      @default(0)
-  downvotes              Int      @default(0)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id                    Int      @id @default(autoincrement())
+  slug                  String   @unique // stable identifier (e.g. "intro_who")
+  qVariants             String // JSON array of question variants
+  a_ko                  String
+  a_en                  String
+  tags                  String   @default("[]") // JSON array
+  isActive              Boolean  @default(true)
+  source                String   @default("manual") // "manual" | "promoted" | "seed"
+  promotedFromMessageId Int? // ChatMessage.id this FAQ was promoted from
+  upvotes               Int      @default(0)
+  downvotes             Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   @@index([isActive])
 }

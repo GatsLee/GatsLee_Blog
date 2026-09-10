@@ -6,7 +6,6 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import ChatWidget from "@/components/home/ChatWidget";
-import BuildProgress from "@/components/home/BuildProgress";
 import MetricsPanel from "@/components/home/MetricsPanel";
 import LiveWorkforcePanel from "@/components/home/LiveWorkforcePanel";
 import ScrollReveal from "@/components/home/ScrollReveal";
@@ -167,7 +166,7 @@ export default function HomeContent({ commits, repoName, pinnedPost, products, a
 
               <div className="flex flex-wrap items-center gap-4">
                 <Link
-                  href="/cases"
+                  href="/products"
                   className="group inline-flex items-center gap-2 border border-foreground bg-foreground text-background px-5 py-3 editorial-label font-bold hover:opacity-85 transition-opacity"
                 >
                   <span>{t.home.aboutLink}</span>
@@ -239,7 +238,6 @@ export default function HomeContent({ commits, repoName, pinnedPost, products, a
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
             {/* Left: Build Log */}
             <div>
-              <BuildProgress timeline={buildTimeline} />
             </div>
 
             {/* Right: Portfolio (Products & Agents) */}

@@ -13,7 +13,6 @@ export async function middleware(request: NextRequest) {
   if (
     method === "POST" &&
     (pathname === "/api/comments" ||
-      pathname === "/api/guestbook" ||
       pathname === "/api/posts/webhook" ||
       pathname === "/api/auth/login")
   ) {
@@ -28,9 +27,7 @@ export async function middleware(request: NextRequest) {
   const isProtectedApi =
     (["POST", "PUT", "DELETE"].includes(method) &&
       (pathname.startsWith("/api/posts") ||
-        pathname.startsWith("/api/comments") ||
-        pathname.startsWith("/api/guestbook") ||
-        pathname.startsWith("/api/progress"))) ||
+        pathname.startsWith("/api/comments"))) ||
     pathname.startsWith("/api/admin");
 
   if (!isProtectedPage && !isProtectedApi) {
@@ -66,8 +63,6 @@ export const config = {
     "/admin/:path*",
     "/api/posts/:path*",
     "/api/comments/:path*",
-    "/api/guestbook/:path*",
-    "/api/progress/:path*",
     "/api/admin/:path*",
   ],
 };

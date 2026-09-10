@@ -18,10 +18,9 @@ export default function ClientLayout({
   const pathname = usePathname();
   const isEditorPage = pathname?.startsWith("/write");
   const isHomePage = pathname === "/";
-  const isConnectPage = pathname === "/connect";
   // The resume page is the PDF source — nothing floating over it.
   const isResumePage = pathname === "/resume";
-  const showChatWidget = !isEditorPage && !isHomePage && !isConnectPage && !isResumePage;
+  const showChatWidget = !isEditorPage && !isHomePage && !isResumePage;
 
   return (
     <ThemeProvider>

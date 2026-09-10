@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { chunkPost, embedTexts, invalidateChunkCache } from "@/lib/rag";
-import { parseBeats, beatsToMarkdown } from "@/lib/case-study";
 
 const OLLAMA_URL = process.env.OLLAMA_URL || "http://host.docker.internal:11434";
 const CHAT_MODEL = process.env.CHAT_MODEL || "gemma4:e4b";
@@ -79,7 +78,7 @@ export async function POST() {
   try {
     const posts = await prisma.post.findMany({
       where: { published: true },
-      select: { id: true, title: true, slug: true, category: true, content: true, caseBeats: true },
+      select: { id: true, title: true, slug: true, category: true, content: true },
     });
 
     if (posts.length === 0) return Response.json({ indexed: 0, chunks: 0 });
@@ -88,14 +87,7 @@ export async function POST() {
     let totalChunks = 0;
 
     for (const post of posts) {
-      // Case study beats live in a JSON column the chunker can't see — flatten
-      // them into the indexed text so the chatbot can answer from them.
-      const beats = post.category === "case" ? parseBeats(post.caseBeats) : null;
-      const indexable = beats
-        ? `${post.content}\n\n${beatsToMarkdown(beats)}`
-        : post.content;
-
-      const chunks = chunkPost(post.title, indexable);
+      const chunks = chunkPost(post.title, post.content);
       if (chunks.length === 0) continue;
 
       const embeddings = await embedTexts(chunks);
@@ -120,7 +112,7 @@ export async function POST() {
           signal: AbortSignal.timeout(30000),
           body: JSON.stringify({
             model: SUMMARY_MODEL,
-            prompt: `다음 블로그 포스트를 2-3문장으로 한국어 요약해줘. 규칙: 반드시 완전한 문장으로 끝낼 것, 마크다운 헤더(##)나 글머리 기호(*, -)는 절대 사용하지 말 것, 일반 텍스트만 사용할 것. 핵심 내용과 배울 수 있는 점 중심으로:\n\n${indexable.slice(0, 3000)}`,
+            prompt: `다음 블로그 포스트를 2-3문장으로 한국어 요약해줘. 규칙: 반드시 완전한 문장으로 끝낼 것, 마크다운 헤더(##)나 글머리 기호(*, -)는 절대 사용하지 말 것, 일반 텍스트만 사용할 것. 핵심 내용과 배울 수 있는 점 중심으로:\n\n${post.content.slice(0, 3000)}`,
             stream: false,
             options: { temperature: 0.3, num_predict: 400 },
           }),

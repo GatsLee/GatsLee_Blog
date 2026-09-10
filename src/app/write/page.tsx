@@ -6,16 +6,12 @@ import { Code2, Package, Bot, Activity, Target } from "lucide-react";
 import NotionEditor from "@/components/editor/NotionEditor";
 import ProductEditor from "@/components/editor/ProductEditor";
 import BuildEditor from "@/components/editor/BuildEditor";
-import CaseStudyEditor, { type CaseSaveData } from "@/components/editor/CaseStudyEditor";
 import { routeFor, type Category } from "@/lib/categories";
 
 type EditorCategory = Category;
 
 const CATEGORY_OPTIONS: { value: EditorCategory; label: string; description: string; icon: React.ReactNode }[] = [
-  { value: 'case', label: 'Case Study', description: '문제 → 가설 → 트레이드오프 → 결과 → 학습', icon: <Target size={20} /> },
   { value: 'journal', label: 'Journal', description: 'Development notes and troubleshooting', icon: <Code2 size={20} /> },
-  { value: 'product', label: 'Product', description: 'Product with structured fields', icon: <Package size={20} /> },
-  { value: 'agent', label: 'Agent', description: 'AI agent with structured fields', icon: <Bot size={20} /> },
   { value: 'build', label: 'Build', description: 'Build progress timeline entry', icon: <Activity size={20} /> },
 ];
 
@@ -98,27 +94,6 @@ export default function WritePage() {
     }
   };
 
-  // Save handler for CaseStudyEditor
-  const handleCaseSave = async (data: CaseSaveData) => {
-    if (!data.title.trim()) return;
-    setSaving(true);
-    try {
-      const res = await fetch("/api/posts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (res.ok) {
-        const post = await res.json();
-        router.push(routeFor("case", post.slug));
-        router.refresh();
-      }
-    } catch (error) {
-      console.error("Failed to save:", error);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   // Save handler for BuildEditor
   const handleBuildSave = async (data: {
@@ -196,17 +171,11 @@ export default function WritePage() {
   }
 
   // Render appropriate editor
-  if (selectedCategory === 'case') {
-    return <CaseStudyEditor onSave={handleCaseSave} saving={saving} />;
-  }
 
   if (selectedCategory === 'journal') {
     return <NotionEditor initialCategory={selectedCategory} onSave={handleNotionSave} saving={saving} />;
   }
 
-  if (selectedCategory === 'product' || selectedCategory === 'agent') {
-    return <ProductEditor initialCategory={selectedCategory} onSave={handleProductSave} saving={saving} />;
-  }
 
   if (selectedCategory === 'build') {
     return <BuildEditor onSave={handleBuildSave} saving={saving} />;

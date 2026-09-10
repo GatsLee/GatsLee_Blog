@@ -47,7 +47,7 @@ export const FOLLOW_UPS: Record<string, Record<string, string[]>> = {
     techStack: ["Why did you choose that stack?", "Any tech you want to adopt next?"],
     strength: ["How did you transition from non-CS?", "What's your learning method?"],
     infra: ["How much does the server cost?", "How do you monitor it?"],
-    contact: ["Leave a message on the guestbook"],
+    contact: ["Reach out through the links in the footer"],
     default: ["Tell me more", "Any other projects?"],
   },
 };
