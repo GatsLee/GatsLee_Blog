@@ -14,6 +14,8 @@
   --th-muted: #A1A1AA;
   --th-hover: #F5F5F5;
   --grid-line: rgba(0, 0, 0, 0.1);
+  /* 와이어프레임의 강조색. 모노 라벨·단계·메타 라벨이 이 색을 쓴다. */
+  --th-brand: #A63D2F;
 }
 
 @theme inline {
@@ -33,6 +35,7 @@
   --color-border-strong: var(--th-border-strong);
   --color-muted: var(--th-muted);
   --color-hover: var(--th-hover);
+  --color-brand: var(--th-brand);
 
   /* Animations */
   --animate-fadeIn: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -56,6 +59,8 @@
   --th-muted: #71717A;
   --th-hover: #1A1A1A;
   --grid-line: rgba(255, 255, 255, 0.1);
+  /* 어두운 바탕에서 #A63D2F는 안 읽힌다. 같은 계열로 올린 값. */
+  --th-brand: #E0705E;
 }
 
 /* Tailwind theme colors mapping */
