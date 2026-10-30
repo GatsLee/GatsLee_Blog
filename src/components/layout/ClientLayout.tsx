@@ -4,16 +4,18 @@ import { usePathname } from "next/navigation";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import TopNav from "@/components/layout/TopNav";
-import Footer from "@/components/layout/Footer";
+import Footer, { type FooterProject } from "@/components/layout/Footer";
 import DynamicFavicon from "@/components/layout/DynamicFavicon";
 import ChatWidget from "@/components/home/ChatWidget";
 
 export default function ClientLayout({
   children,
   isAdmin,
+  footerProjects,
 }: {
   children: React.ReactNode;
   isAdmin: boolean;
+  footerProjects: FooterProject[];
 }) {
   const pathname = usePathname();
   const isEditorPage = pathname?.startsWith("/write");
@@ -28,12 +30,8 @@ export default function ClientLayout({
         <DynamicFavicon />
         <div className="min-h-screen flex flex-col">
           <TopNav isAdmin={isAdmin} />
-          <main className={`flex-1 ${isEditorPage ? "pt-[72px]" : "pt-[72px]"}`}>
-            <div className={isEditorPage ? "" : ""}>
-              {children}
-            </div>
-          </main>
-          {!isEditorPage && <Footer />}
+          <main className="flex-1">{children}</main>
+          {!isEditorPage && <Footer projects={footerProjects} />}
           {showChatWidget && <ChatWidget initialMessage="" defaultOpen={false} />}
         </div>
       </LanguageProvider>

@@ -1,27 +1,33 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 :root {
+  /* 체스 에디토리얼 팔레트. Figma v2_wireframe(web) 기준 */
   --th-background: #FFFFFF;
-  --th-foreground: #0A0A0A;
-  --th-primary: #0A0A0A;
-  --th-secondary: #71717A;
-  --th-accent: #0A0A0A;
-  --th-surface: #FAFAFA;
-  --th-border: #E5E5E5;
-  --th-border-strong: #D4D4D8;
-  --th-muted: #A1A1AA;
-  --th-hover: #F5F5F5;
-  --grid-line: rgba(0, 0, 0, 0.1);
-  /* 와이어프레임의 강조색. 모노 라벨·단계·메타 라벨이 이 색을 쓴다. */
-  --th-brand: #A63D2F;
+  --th-foreground: #18191B;
+  --th-primary: #18191B;
+  --th-secondary: #62666D;
+  --th-accent: #315CF4;
+  --th-surface: #F2F5FF;
+  --th-border: #DEE5F5;
+  --th-border-strong: #B9C6EA;
+  --th-muted: #A5A9B0;
+  --th-hover: #E8EFFF;
+  --grid-line: rgba(49, 92, 244, 0.12);
+  --th-brand: #315CF4;
+  --th-brand-soft: #E8EFFF;
+  --th-surface-2: #F7F9FF;
+  --th-success: #1F9D5C;
+  --th-warning: #B8650A;
+  --th-danger: #D9534F;
 }
 
 @theme inline {
   /* Typography */
-  --font-heading: 'Manrope', 'Pretendard', sans-serif;
-  --font-body: 'Inter', 'Pretendard', sans-serif;
+  /* 실제 화면은 Pretendard (Figma는 Noto Sans KR로 그렸다. D5) */
+  --font-heading: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
   /* Colors — reference theme vars so dark mode class toggle works */
@@ -36,6 +42,11 @@
   --color-muted: var(--th-muted);
   --color-hover: var(--th-hover);
   --color-brand: var(--th-brand);
+  --color-brand-soft: var(--th-brand-soft);
+  --color-surface-2: var(--th-surface-2);
+  --color-success: var(--th-success);
+  --color-warning: var(--th-warning);
+  --color-danger: var(--th-danger);
 
   /* Animations */
   --animate-fadeIn: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -48,19 +59,24 @@
 
 /* Dark Theme */
 :root.dark {
-  --th-background: #0A0A0A;
-  --th-foreground: #FAFAFA;
-  --th-primary: #FAFAFA;
-  --th-secondary: #A1A1AA;
-  --th-accent: #FAFAFA;
-  --th-surface: #141414;
-  --th-border: #262626;
-  --th-border-strong: #3F3F46;
-  --th-muted: #71717A;
-  --th-hover: #1A1A1A;
-  --grid-line: rgba(255, 255, 255, 0.1);
-  /* 어두운 바탕에서 #A63D2F는 안 읽힌다. 같은 계열로 올린 값. */
-  --th-brand: #E0705E;
+  /* 다크 모드 프레임은 그리지 않는다. 같은 파란 계열로 명도만 뒤집은 값 */
+  --th-background: #0F1115;
+  --th-foreground: #EEF1F8;
+  --th-primary: #EEF1F8;
+  --th-secondary: #A5A9B0;
+  --th-accent: #6F8CFF;
+  --th-surface: #161A22;
+  --th-border: #262B36;
+  --th-border-strong: #343B4A;
+  --th-muted: #6B7080;
+  --th-hover: #1D2330;
+  --grid-line: rgba(111, 140, 255, 0.14);
+  --th-brand: #6F8CFF;
+  --th-brand-soft: #1D2638;
+  --th-surface-2: #12161D;
+  --th-success: #4ADE80;
+  --th-warning: #F0B060;
+  --th-danger: #F87171;
 }
 
 /* Tailwind theme colors mapping */
@@ -81,14 +97,9 @@
 /* Base styles — Editorial */
 body {
   background-color: var(--color-background);
-  background-image:
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-  background-size: 60px 60px;
-  background-attachment: fixed;
   color: var(--color-foreground);
-  font-family: 'Inter', 'Pretendard', sans-serif;
-  font-weight: 300;
+  font-family: var(--font-body);
+  font-weight: 400;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -96,8 +107,8 @@ body {
 
 /* Selection */
 ::selection {
-  background: var(--color-foreground);
-  color: var(--color-background);
+  background: var(--color-brand-soft);
+  color: var(--color-foreground);
 }
 
 /* Minimal Scrollbar */
@@ -171,10 +182,10 @@ body.chat-open {
 
 /* Typography hierarchy */
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Manrope', 'Pretendard', sans-serif;
+  font-family: var(--font-heading);
   font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
 }
 
 /* Line clamp */
@@ -383,4 +394,25 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 8.5pt;
     color: #555;
   }
+}
+
+/* ─────────── 체스 에디토리얼 공통 ─────────── */
+/* 섹션 사이 체크무늬 경계. HM/전환경계 컴포넌트를 CSS로 옮긴 것 */
+.checker-boundary {
+  height: 168px;
+  background-color: var(--color-background);
+  background-image:
+    conic-gradient(var(--color-brand-soft) 25%, transparent 0 50%, var(--color-brand-soft) 0 75%, transparent 0),
+    linear-gradient(to bottom, var(--color-background), var(--color-brand-soft));
+  background-size: 48px 48px, 100% 100%;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.15), #000 70%);
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,0.15), #000 70%);
+}
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 22px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-brand);
 }

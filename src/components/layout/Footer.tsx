@@ -1,45 +1,76 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { Github, Linkedin, Mail } from "lucide-react";
-import { useLanguage } from "@/context/LanguageContext";
-import VisitorCount from "@/components/home/VisitorCount";
+import { ArrowUpRight } from "lucide-react";
+import { TOPICS } from "@/lib/topics";
+import TopicIcon from "@/components/common/TopicIcon";
 
-export default function Footer() {
-  const { t } = useLanguage();
+export type FooterProject = { name: string; slug: string };
 
+function openChat() {
+  window.dispatchEvent(new Event("gats:open-chat"));
+}
+
+export default function Footer({ projects }: { projects: FooterProject[] }) {
   return (
-    <footer className="w-full border-t border-border bg-background">
-      <div className="max-w-screen-2xl mx-auto px-6 md:px-12 py-12">
-        {/* Single row: GATS_LAB + dream + icons */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-          <div className="flex items-center gap-4">
-            <span className="font-mono font-bold text-sm tracking-tight text-foreground">GATS_LAB</span>
-            <div className="flex items-center gap-3">
-              <a href="https://github.com/GatsLee" target="_blank" rel="noopener noreferrer" className="text-muted hover:text-foreground transition-colors">
-                <Github size={16} strokeWidth={1.5} />
-              </a>
-              <a href="https://www.linkedin.com/in/joon-yeol-lee-567421281/" target="_blank" rel="noopener noreferrer" className="text-muted hover:text-foreground transition-colors">
-                <Linkedin size={16} strokeWidth={1.5} />
-              </a>
-              <a href="mailto:naanthonylee@gmail.com" className="text-muted hover:text-foreground transition-colors">
-                <Mail size={16} strokeWidth={1.5} />
-              </a>
+    <footer className="w-full">
+      <div className="checker-boundary" aria-hidden />
+      <div className="bg-brand-soft">
+        <div className="mx-auto flex max-w-[1184px] flex-col gap-4 px-6 pb-10 pt-4">
+          <div className="flex flex-col gap-12 md:flex-row md:items-center md:gap-20">
+            <div className="md:w-[440px]">
+              <Image src="/images/avatar.png" alt="" width={125} height={125} className="-ml-2" />
+              <p className="mt-1 text-[32px] font-bold leading-tight text-foreground">Gats Blog</p>
+              <p className="mt-3 text-[15px] text-foreground">사용자의 관점에서 서비스를 기획하는 이준열입니다.</p>
             </div>
-            <div className="ml-4">
-              <VisitorCount />
+            <div className="grid flex-1 grid-cols-2 gap-8 sm:grid-cols-3">
+              <div className="flex flex-col gap-2.5">
+                <p className="mono-label">Topics</p>
+                {TOPICS.map((t) => (
+                  <Link
+                    key={t.slug}
+                    href={`/insights?topic=${t.slug}`}
+                    className="flex items-center gap-3 py-0.5 text-[15px] font-medium text-foreground hover:text-brand"
+                  >
+                    <span className="text-brand">
+                      <TopicIcon slug={t.slug} />
+                    </span>
+                    {t.label}
+                  </Link>
+                ))}
+              </div>
+              <div className="flex flex-col gap-[18px]">
+                <p className="mono-label">Projects</p>
+                {projects.map((p) => (
+                  <Link key={p.slug} href={`/products/${p.slug}`} className="text-[15px] text-foreground hover:text-brand">
+                    {p.name}
+                  </Link>
+                ))}
+              </div>
+              <div className="flex flex-col gap-[18px]">
+                <p className="mono-label">More</p>
+                <Link href="/insights" className="text-[15px] text-foreground hover:text-brand">
+                  글 전체 보기
+                </Link>
+                <a
+                  href="/resume"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-[15px] text-foreground hover:text-brand"
+                >
+                  이력서 <ArrowUpRight size={14} className="text-brand" />
+                </a>
+                <button type="button" onClick={openChat} className="text-left text-[15px] text-foreground hover:text-brand">
+                  AI에게 질문하기
+                </button>
+              </div>
             </div>
           </div>
-
+          <p className="font-mono text-[11px] uppercase tracking-[0.04em] text-secondary">
+            © {new Date().getFullYear()} Gats Lee. All rights reserved.
+          </p>
         </div>
-
-        <p className="text-sm leading-relaxed text-secondary font-light max-w-lg mb-4">
-          {t.footer?.dream || "AI로 문제를 정의하고, 시스템을 설계하고, 에이전트로 해결하는 세상을 만들고 싶습니다. 혼자서도 팀만큼의 임팩트를 내는 것이 목표입니다."}
-        </p>
-
-        <p className="editorial-label text-muted">
-          &copy; {new Date().getFullYear()} Gats Lee. All Rights Reserved.
-        </p>
       </div>
     </footer>
   );

@@ -31,6 +31,13 @@ export default function ChatRoot({ initialMessage, defaultOpen = false }: ChatRo
 
   useKeyboardShortcuts({ onToggle: handleToggle, onClose: handleClose, isOpen });
 
+  // 푸터 "AI에게 질문하기", 홈 "ASK GATS" 같은 화면 안 진입점에서 연다
+  useEffect(() => {
+    const open = () => setIsOpen(true);
+    window.addEventListener("gats:open-chat", open);
+    return () => window.removeEventListener("gats:open-chat", open);
+  }, []);
+
   // Focus input when widget opens, refocus FAB when closes
   useEffect(() => {
     if (isOpen) {
