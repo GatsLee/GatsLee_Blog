@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { resolveStatus } from "@/lib/post-status";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
         translationKey: translationKey || null,
         coverImage: coverImage || "",
         description: description || "",
-        published: published !== undefined ? published : true,
+        ...(resolveStatus({ status: body.status, published }) ?? { status: "published", published: true }),
         buildProgress: typeof buildProgress === 'number' ? buildProgress : 0,
         relatedPosts: relatedPosts || "[]",
         demoVideo: demoVideo || null,

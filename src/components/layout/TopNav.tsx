@@ -60,7 +60,7 @@ function ToolButton({
 
 const noopSubscribe = () => () => {};
 
-export default function TopNav({ isAdmin }: { isAdmin: boolean }) {
+export default function TopNav({ isAdmin, resumeUrl }: { isAdmin: boolean; resumeUrl: string }) {
   // 서버 렌더에서는 테마를 모르므로 테마 아이콘은 클라이언트에서만 그린다
   const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -178,7 +178,7 @@ export default function TopNav({ isAdmin }: { isAdmin: boolean }) {
               <ToolButton label="검색" onClick={() => setSearchOpen(true)}>
                 <Search size={20} strokeWidth={1.8} />
               </ToolButton>
-              <ToolButton label="이력서" href="/resume" external>
+              <ToolButton label="이력서" href={resumeUrl} external>
                 <FileText size={20} strokeWidth={1.8} />
               </ToolButton>
               {mounted && (
@@ -224,7 +224,7 @@ export default function TopNav({ isAdmin }: { isAdmin: boolean }) {
             <ToolButton label="검색" onClick={() => setSearchOpen(true)}>
               <Search size={20} />
             </ToolButton>
-            <ToolButton label="이력서" href="/resume" external>
+            <ToolButton label="이력서" href={resumeUrl} external>
               <FileText size={20} />
             </ToolButton>
             <ToolButton label="RSS 피드" href="/feed.xml" external>

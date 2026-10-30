@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { resolveStatus, isPostStatus } from "@/lib/post-status";
 
 export async function GET(
   _request: NextRequest,
@@ -34,9 +35,11 @@ export async function PUT(
         data: { pinned: false },
       });
     }
+    const current = await prisma.post.findUnique({ where: { id: postId }, select: { status: true } });
+    const resolved = resolveStatus(body, isPostStatus(current?.status) ? current.status : undefined);
     const post = await prisma.post.update({
       where: { id: postId },
-      data: body,
+      data: resolved ? { ...body, ...resolved } : body,
     });
     return NextResponse.json(post);
   } catch {

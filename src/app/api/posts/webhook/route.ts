@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { resolveStatus } from "@/lib/post-status";
 
 export async function POST(request: NextRequest) {
   // Validate API key
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
         tags: tags || "[]",
         description: description || "",
         locale: locale || "ko",
-        published: published ?? true,
+        ...(resolveStatus({ published: published ?? true }) ?? { status: "published", published: true }),
       },
     });
 

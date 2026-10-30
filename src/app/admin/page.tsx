@@ -1,457 +1,200 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Settings, Trash2, Pencil, X, Check, FileText, MessageSquare, Users, Pin, ChevronLeft, ChevronRight } from "lucide-react";
-import ChatAnalyticsTab from "@/components/admin/ChatAnalyticsTab";
-import ResumeEditorTab from "@/components/admin/ResumeEditorTab";
-import RAGManagementTab from "@/components/admin/RAGManagementTab";
-import FaqManagementTab from "@/components/admin/FaqManagementTab";
-import { CATEGORIES } from "@/lib/categories";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { prisma } from "@/lib/db";
 
-type Tab = "posts" | "comments" | "chat" | "rag" | "faq" | "resume";
+const DAY = 86_400_000;
 
-interface Post {
-  id: number;
-  title: string;
-  slug: string;
-  category: string;
-  published: boolean;
-  pinned: boolean;
-  githubRepo: string;
-  createdAt: string;
-  _count: { comments: number };
+type SearchParams = Promise<{ week?: string }>;
+
+function range(offset: number) {
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  end.setTime(end.getTime() + offset * 7 * DAY);
+  const start = new Date(end.getTime() - 7 * DAY + 1);
+  return { start, end };
 }
 
-interface Comment {
-  id: number;
-  author: string;
-  content: string;
-  createdAt: string;
-  post: { title: string; slug: string };
+const md = (d: Date) => `${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+
+async function countsFor(start: Date, end: Date) {
+  const between = { gte: start, lte: end };
+  const [views, comments, posts, sessions] = await Promise.all([
+    prisma.pageView.count({ where: { createdAt: between } }),
+    prisma.comment.count({ where: { createdAt: between } }),
+    prisma.post.count({ where: { status: "published", createdAt: between } }),
+    prisma.chatMessage.findMany({ where: { createdAt: between, role: "user" }, distinct: ["sessionId"], select: { sessionId: true } }),
+  ]);
+  return { views, comments, posts, chats: sessions.length };
 }
 
-interface GuestEntry {
-  id: number;
-  author: string;
-  message: string;
-  createdAt: string;
-}
-
-const POSTS_PER_PAGE = 10;
-
-export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("posts");
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editValue, setEditValue] = useState("");
-  const [postCategoryFilter, setPostCategoryFilter] = useState<string>("journal");
-  const [editingGithubId, setEditingGithubId] = useState<number | null>(null);
-  const [githubRepoValue, setGithubRepoValue] = useState("");
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [currentPage, setCurrentPage] = useState(1);
-
-  const tabLabels: Record<Tab, string> = { posts: "Posts", comments: "Comments", chat: "Chat", rag: "RAG", faq: "FAQ", resume: "Resume" };
-
-  useEffect(() => {
-    if (activeTab === "posts") {
-      fetch("/api/admin/posts")
-        .then((r) => r.json())
-        .then(setPosts)
-        .catch(() => {});
-    } else if (activeTab === "comments") {
-      fetch("/api/comments")
-        .then((r) => r.json())
-        .then(setComments)
-        .catch(() => {});
-    }
-  }, [activeTab]);
-
-  // Reset page and selection when filter changes
-  useEffect(() => {
-    setCurrentPage(1);
-    setSelectedIds(new Set());
-  }, [postCategoryFilter]);
-
-  const filteredPosts = posts.filter(
-    (post) => post.category === postCategoryFilter
+function Delta({ now, before }: { now: number; before: number }) {
+  const d = now - before;
+  if (d === 0) return null;
+  return (
+    <span className={`rounded-full px-[7px] py-[3px] text-[11px] font-bold ${d > 0 ? "bg-brand-soft text-brand" : "bg-[#eef0f3] text-secondary"}`}>
+      {d > 0 ? `+${d}` : `−${-d}`}
+    </span>
   );
-  const totalPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
-  const paginatedPosts = filteredPosts.slice(
-    (currentPage - 1) * POSTS_PER_PAGE,
-    currentPage * POSTS_PER_PAGE
+}
+
+// 조회 추이: 7일 영역 그래프
+function ViewsChart({ days }: { days: { label: string; value: number }[] }) {
+  const W = 680;
+  const H = 200;
+  const max = Math.max(4, ...days.map((d) => d.value));
+  const x = (i: number) => 16 + (i * (W - 32)) / (days.length - 1);
+  const y = (v: number) => H - 24 - (v / max) * (H - 48);
+  const line = days.map((d, i) => `${i ? "L" : "M"}${x(i)},${y(d.value)}`).join(" ");
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="일별 조회수">
+      {[0.25, 0.5, 0.75].map((r) => (
+        <line key={r} x1="16" x2={W - 16} y1={24 + r * (H - 48)} y2={24 + r * (H - 48)} stroke="var(--color-border)" strokeDasharray="4 4" />
+      ))}
+      <path d={`${line} L${x(days.length - 1)},${H - 24} L${x(0)},${H - 24} Z`} fill="var(--color-brand-soft)" />
+      <path d={line} fill="none" stroke="var(--color-brand)" strokeWidth="2.5" strokeLinejoin="round" />
+      {days.map((d, i) => (
+        <g key={d.label}>
+          <circle cx={x(i)} cy={y(d.value)} r="3.5" fill="var(--color-brand)" />
+          <text x={x(i)} y={H - 4} textAnchor="middle" fontSize="11" fill="var(--color-secondary)">
+            {d.label}
+          </text>
+        </g>
+      ))}
+    </svg>
   );
-  const startIndex = (currentPage - 1) * POSTS_PER_PAGE + 1;
-  const endIndex = Math.min(currentPage * POSTS_PER_PAGE, filteredPosts.length);
+}
 
-  const handleDelete = async (type: string, id: number) => {
-    if (!confirm("Are you sure you want to delete this?")) return;
+// IA_AD_001 대시보드. 있는 데이터만 보여준다 (D8)
+export default async function DashboardPage({ searchParams }: { searchParams: SearchParams }) {
+  const offset = Math.min(0, parseInt((await searchParams).week ?? "0") || 0);
+  const now = range(offset);
+  const prev = range(offset - 1);
 
-    const urlMap: Record<string, string> = {
-      posts: `/api/posts/${id}`,
-      comments: `/api/comments/${id}`,
-    };
+  const [cur, before, statusCounts, daily, viewed] = await Promise.all([
+    countsFor(now.start, now.end),
+    countsFor(prev.start, prev.end),
+    prisma.post.groupBy({ by: ["status"], where: { locale: "ko", category: { in: ["journal", "build"] } }, _count: true }),
+    prisma.pageView.findMany({ where: { createdAt: { gte: now.start, lte: now.end } }, select: { createdAt: true } }),
+    prisma.pageView.groupBy({
+      by: ["path"],
+      where: { createdAt: { gte: now.start, lte: now.end }, OR: [{ path: { startsWith: "/insights/" } }, { path: { startsWith: "/products/" } }] },
+      _count: true,
+      orderBy: { _count: { path: "desc" } },
+      take: 3,
+    }),
+  ]);
 
-    const res = await fetch(urlMap[type], { method: "DELETE" });
-    if (res.ok) {
-      if (type === "posts") {
-        setPosts((prev) => prev.filter((p) => p.id !== id));
-        setSelectedIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
-      }
-      if (type === "comments") setComments((prev) => prev.filter((c) => c.id !== id));
-    }
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now.start.getTime() + i * DAY);
+    const value = daily.filter((v) => v.createdAt.toDateString() === d.toDateString()).length;
+    return { label: md(d), value };
+  });
+
+  const slugs = viewed.map((v) => v.path.split("/")[2]).filter(Boolean);
+  const [posts, products] = await Promise.all([
+    prisma.post.findMany({ where: { slug: { in: slugs } }, select: { slug: true, title: true } }),
+    prisma.product.findMany({ where: { slug: { in: slugs } }, select: { slug: true, name: true } }),
+  ]);
+  const titleOf = (path: string) => {
+    const slug = path.split("/")[2];
+    return posts.find((p) => p.slug === slug)?.title ?? products.find((p) => p.slug === slug)?.name ?? path;
   };
 
-  const handleBulkDelete = async () => {
-    if (selectedIds.size === 0) return;
-    if (!confirm(`Delete ${selectedIds.size} selected post(s)?`)) return;
-
-    const ids = Array.from(selectedIds);
-    for (const id of ids) {
-      await fetch(`/api/posts/${id}`, { method: "DELETE" });
-    }
-    setPosts((prev) => prev.filter((p) => !selectedIds.has(p.id)));
-    setSelectedIds(new Set());
-  };
-
-  const toggleSelect = (id: number) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const toggleSelectAll = () => {
-    const pageIds = paginatedPosts.map((p) => p.id);
-    const allSelected = pageIds.every((id) => selectedIds.has(id));
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (allSelected) {
-        pageIds.forEach((id) => next.delete(id));
-      } else {
-        pageIds.forEach((id) => next.add(id));
-      }
-      return next;
-    });
-  };
-
-  const handleTogglePublish = async (post: Post) => {
-    const res = await fetch(`/api/posts/${post.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ published: !post.published }),
-    });
-    if (res.ok) {
-      setPosts((prev) =>
-        prev.map((p) => (p.id === post.id ? { ...p, published: !p.published } : p))
-      );
-    }
-  };
-
-  const handleTogglePin = async (post: Post) => {
-    const newPinned = !post.pinned;
-    const res = await fetch(`/api/posts/${post.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pinned: newPinned }),
-    });
-    if (res.ok) {
-      setPosts((prev) =>
-        prev.map((p) => ({ ...p, pinned: p.id === post.id ? newPinned : false }))
-      );
-    }
-  };
-
-  const handleSaveGithubRepo = async (id: number) => {
-    const res = await fetch(`/api/posts/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ githubRepo: githubRepoValue }),
-    });
-    if (res.ok) {
-      setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, githubRepo: githubRepoValue } : p)));
-      setEditingGithubId(null);
-    }
-  };
-
-  const handleSaveEdit = async (type: "comments", id: number) => {
-    const urlMap = {
-      comments: `/api/comments/${id}`,
-    };
-    const bodyMap = {
-      comments: { content: editValue },
-    };
-
-    const res = await fetch(urlMap[type], {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(bodyMap[type]),
-    });
-
-    if (res.ok) {
-      if (type === "comments") {
-        setComments((prev) =>
-          prev.map((c) => (c.id === id ? { ...c, content: editValue } : c))
-        );
-      } else {
-      }
-      setEditingId(null);
-      setEditValue("");
-    }
-  };
-
-  const tabs: Tab[] = ["posts", "comments", "chat", "rag", "faq", "resume"];
-
-  const getTabIcon = (tab: Tab) => {
-    switch (tab) {
-      case "posts": return <FileText size={16} />;
-      case "comments": return <MessageSquare size={16} />;
-    }
-  };
+  const status = (s: string) => statusCounts.find((c) => c.status === s)?._count ?? 0;
+  const kpis = [
+    { label: "주간 조회수", now: cur.views, before: before.views, sub: "공개 화면 조회" },
+    { label: "주간 댓글", now: cur.comments, before: before.comments, sub: "글·프로젝트 댓글" },
+    { label: "발행한 글", now: cur.posts, before: before.posts, sub: "이 기간에 발행" },
+    { label: "챗봇 대화", now: cur.chats, before: before.chats, sub: "방문자 세션" },
+  ];
+  const stages = [
+    { key: "draft", label: "초안", desc: "작성 중이거나 공개 전인 글" },
+    { key: "published", label: "발행됨", desc: "블로그에 공개된 글" },
+    { key: "hidden", label: "숨김", desc: "발행했다가 내린 글" },
+  ];
 
   return (
-    <div className="max-w-7xl mx-auto animate-fadeIn">
-      {/* Header */}
-      <div className="mb-8 pb-6 border-b border-border">
-        <h1 className="text-3xl text-foreground font-bold flex items-center tracking-tight mb-2">
-          <Settings className="mr-3" size={28} strokeWidth={1.5} />
-          Admin Dashboard
-        </h1>
-        <p className="text-sm text-muted ml-11">
-          Manage your posts, comments, and chatbot
-        </p>
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold leading-8 text-foreground">대시보드</h1>
+        <div className="flex items-center gap-2 text-[13px] font-bold text-foreground">
+          <Link href={`/admin?week=${offset - 1}`} aria-label="이전 주" className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-background">
+            <ChevronLeft size={16} />
+          </Link>
+          {md(now.start)} – {md(now.end)}
+          {offset < 0 ? (
+            <Link href={`/admin?week=${offset + 1}`} aria-label="다음 주" className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-background">
+              <ChevronRight size={16} />
+            </Link>
+          ) : (
+            <span className="flex h-8 w-8 items-center justify-center text-muted">
+              <ChevronRight size={16} />
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Tab Bar */}
-      <div className="flex space-x-2 mb-8">
-        {tabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => { setActiveTab(tab); setEditingId(null); }}
-            className={`px-6 py-3 text-sm font-medium transition-all rounded-lg cursor-pointer flex items-center gap-2 ${
-              activeTab === tab
-                ? "bg-accent text-background shadow-lg shadow-accent/20 ring-2 ring-accent ring-offset-2 ring-offset-background"
-                : "bg-surface text-muted card-border hover:border-accent hover:text-accent"
-            }`}
-          >
-            {getTabIcon(tab)}
-            {tabLabels[tab]}
-          </button>
+      <div className="grid gap-4 md:grid-cols-4">
+        {kpis.map((k) => (
+          <div key={k.label} className="flex flex-col gap-1.5 rounded-[20px] border border-border bg-background px-[18px] py-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-medium text-secondary">{k.label}</span>
+              <Delta now={k.now} before={k.before} />
+            </div>
+            <span className="text-[28px] font-bold leading-9 text-foreground">{k.now.toLocaleString()}</span>
+            <span className="text-[11px] text-secondary">{k.sub}</span>
+          </div>
         ))}
       </div>
 
-      {/* Posts Tab */}
-      {activeTab === "posts" && (
-        <>
-          {/* Category Filter */}
-          <div className="flex gap-3 mb-6 flex-wrap">
-            {CATEGORIES.map((filter) => (
-              <button
-                key={filter}
-                onClick={() => { setPostCategoryFilter(filter); setCurrentPage(1); }}
-                className={`px-5 py-2.5 text-xs font-medium uppercase tracking-wider transition-all rounded-lg cursor-pointer ${
-                  postCategoryFilter === filter
-                    ? "bg-accent text-background shadow-md ring-2 ring-accent ring-offset-2 ring-offset-background"
-                    : "bg-background text-muted card-border hover:border-accent hover:text-accent"
-                }`}
-              >
-                {filter.charAt(0).toUpperCase() + filter.slice(1)}
-              </button>
-            ))}
-          </div>
-
-          {/* Bulk Actions */}
-          {selectedIds.size > 0 && (
-            <div className="flex items-center gap-3 mb-4 p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
-              <span className="text-sm text-foreground font-medium">{selectedIds.size} selected</span>
-              <button onClick={handleBulkDelete} className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-red-500/10 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/20 transition-colors cursor-pointer">
-                <Trash2 size={13} /> Delete Selected
-              </button>
-              <button onClick={() => setSelectedIds(new Set())} className="text-xs text-muted hover:text-foreground transition-colors cursor-pointer">Clear</button>
-            </div>
-          )}
-
-          <div className="bg-background card-border rounded-xl overflow-hidden shadow-lg overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
-              <thead>
-                <tr className="border-b border-border text-muted text-xs font-mono uppercase bg-background">
-                  <th className="p-4 w-10">
-                    <input type="checkbox" checked={paginatedPosts.length > 0 && paginatedPosts.every((p) => selectedIds.has(p.id))} onChange={toggleSelectAll} className="accent-accent cursor-pointer" />
-                  </th>
-                  <th className="text-left p-4">Title</th>
-                  <th className="text-left p-4 hidden md:table-cell">Category</th>
-                  <th className="text-left p-4">Status</th>
-                  <th className="text-left p-4 hidden md:table-cell">Date</th>
-                  <th className="text-right p-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedPosts.map((post) => (
-                  <tr key={post.id} className={`border-b border-border/50 hover:bg-surface transition-colors ${selectedIds.has(post.id) ? 'bg-accent/5' : ''}`}>
-                    <td className="p-4">
-                      <input type="checkbox" checked={selectedIds.has(post.id)} onChange={() => toggleSelect(post.id)} className="accent-accent cursor-pointer" />
-                    </td>
-                    <td className="p-4">
-                      <span className="text-foreground font-medium">{post.title}</span>
-                      <span className="text-secondary text-xs ml-2">({post._count.comments})</span>
-                    </td>
-                    <td className="p-4 hidden md:table-cell">
-                      <span className="text-muted text-xs font-mono bg-surface px-2 py-1 rounded">{post.category}</span>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => handleTogglePublish(post)} className={`text-xs font-mono px-3 py-1.5 rounded cursor-pointer transition-all ${post.published ? "bg-accent/20 text-accent border border-accent/30" : "bg-red-500/20 text-red-500 border border-red-500/30"}`}>
-                          {post.published ? "Published" : "Draft"}
-                        </button>
-                        <button onClick={() => handleTogglePin(post)} title={post.pinned ? "Unpin" : "Pin"} className={`p-1.5 rounded cursor-pointer transition-all ${post.pinned ? "text-amber-400 bg-amber-400/10" : "text-muted hover:text-amber-400 hover:bg-amber-400/10"}`}>
-                          <Pin size={12} strokeWidth={post.pinned ? 2.5 : 1.5} />
-                        </button>
-                      </div>
-                    </td>
-                    <td className="p-4 hidden md:table-cell text-secondary text-xs font-mono">
-                      {new Date(post.createdAt).toISOString().split("T")[0]}
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link href={`/write/edit/${post.id}`} className="text-muted hover:text-accent transition-colors p-2 hover:bg-surface rounded" title="Edit">
-                          <Pencil size={14} />
-                        </Link>
-                        <button onClick={() => handleDelete("posts", post.id)} className="text-muted hover:text-red-500 transition-colors cursor-pointer p-2 hover:bg-surface rounded" title="Delete">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filteredPosts.length === 0 && (
-                  <tr><td colSpan={6} className="p-12 text-center text-secondary font-mono text-sm">No posts found</td></tr>
-                )}
-              </tbody>
-            </table>
-
-            {/* Pagination */}
-            {filteredPosts.length > POSTS_PER_PAGE && (
-              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-                <span className="text-xs text-muted font-mono">{startIndex}–{endIndex} of {filteredPosts.length}</span>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1} className="p-1.5 rounded text-muted hover:text-foreground hover:bg-hover disabled:opacity-30 cursor-pointer transition-colors">
-                    <ChevronLeft size={14} />
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <button key={page} onClick={() => setCurrentPage(page)} className={`w-7 h-7 text-xs font-mono rounded cursor-pointer transition-colors ${page === currentPage ? "bg-accent text-background" : "text-muted hover:text-foreground hover:bg-hover"}`}>
-                      {page}
-                    </button>
-                  ))}
-                  <button onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="p-1.5 rounded text-muted hover:text-foreground hover:bg-hover disabled:opacity-30 cursor-pointer transition-colors">
-                    <ChevronRight size={14} />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {/* Comments Tab */}
-      {activeTab === "comments" && (
-        <div className="bg-background card-border rounded-xl overflow-hidden shadow-lg">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-muted text-xs font-mono uppercase bg-background">
-                <th className="text-left p-4">Author</th>
-                <th className="text-left p-4">Content</th>
-                <th className="text-left p-4 hidden md:table-cell">Post</th>
-                <th className="text-right p-4">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {comments.map((comment) => (
-                <tr key={comment.id} className="border-b border-border/50 hover:bg-surface transition-colors">
-                  <td className="p-4">
-                    <span className="text-accent text-xs font-mono bg-accent/10 px-2 py-1 rounded">{comment.author}</span>
-                  </td>
-                  <td className="p-4">
-                    {editingId === comment.id ? (
-                      <input
-                        type="text"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        className="w-full bg-background card-border rounded px-3 py-2 text-foreground text-sm focus:border-accent focus:outline-none"
-                        autoFocus
-                      />
-                    ) : (
-                      <span className="text-secondary text-sm">{comment.content.slice(0, 80)}{comment.content.length > 80 ? "..." : ""}</span>
-                    )}
-                  </td>
-                  <td className="p-4 hidden md:table-cell">
-                    <span className="text-secondary text-xs font-mono">{comment.post?.title?.slice(0, 30)}</span>
-                  </td>
-                  <td className="p-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {editingId === comment.id ? (
-                        <>
-                          <button
-                            onClick={() => handleSaveEdit("comments", comment.id)}
-                            className="text-accent hover:text-accent/90 transition-colors cursor-pointer p-2 hover:bg-surface rounded"
-                          >
-                            <Check size={14} />
-                          </button>
-                          <button
-                            onClick={() => { setEditingId(null); setEditValue(""); }}
-                            className="text-muted hover:text-foreground transition-colors cursor-pointer p-2 hover:bg-surface rounded"
-                          >
-                            <X size={14} />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => { setEditingId(comment.id); setEditValue(comment.content); }}
-                            className="text-muted hover:text-accent transition-colors cursor-pointer p-2 hover:bg-surface rounded"
-                            title="Edit"
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete("comments", comment.id)}
-                            className="text-muted hover:text-red-500 transition-colors cursor-pointer p-2 hover:bg-surface rounded"
-                            title="Delete"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {comments.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="p-12 text-center text-secondary font-mono text-sm">
-                    No items found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      <div className="flex flex-col gap-4 lg:flex-row">
+        <div className="flex-1 rounded-3xl border border-border bg-background px-5 py-3.5">
+          <p className="py-2 text-[17px] font-bold text-foreground">조회 추이</p>
+          <ViewsChart days={days} />
         </div>
-      )}
+        <div className="flex flex-col gap-2 rounded-3xl border border-border bg-background px-5 py-4 lg:w-[376px]">
+          <p className="text-[17px] font-bold text-foreground">많이 읽힌 글</p>
+          <p className="text-[11px] text-secondary">이 기간에 조회가 많았던 글과 프로젝트입니다.</p>
+          {viewed.length === 0 ? (
+            <p className="py-6 text-center text-sm text-secondary">이 기간에 기록된 조회가 없어요.</p>
+          ) : (
+            viewed.map((v, i) => (
+              <Link key={v.path} href={v.path} target="_blank" className="flex flex-col gap-0.5 rounded-xl bg-surface px-3 py-2.5 hover:bg-brand-soft">
+                <span className="text-[11px] font-medium text-brand">
+                  {i + 1}위 · 조회 {v._count}
+                </span>
+                <span className="truncate text-[13px] font-bold text-foreground">{titleOf(v.path)}</span>
+              </Link>
+            ))
+          )}
+        </div>
+      </div>
 
-      {/* Chat Analytics Tab */}
-      {activeTab === "chat" && <ChatAnalyticsTab />}
-
-      {/* RAG Management Tab */}
-      {activeTab === "rag" && <RAGManagementTab />}
-
-      {/* FAQ Management Tab */}
-      {activeTab === "faq" && <FaqManagementTab />}
-
-      {/* About Editor Tab */}
-
-      {activeTab === "resume" && <ResumeEditorTab />}
+      <div className="flex flex-col gap-3.5 rounded-3xl border border-border bg-background px-5 py-[18px]">
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="text-[17px] font-bold text-foreground">콘텐츠 단계</p>
+            <p className="text-[11px] text-secondary">한국어 글 기준</p>
+          </div>
+          <Link href="/admin/posts" className="text-[11px] font-bold text-brand">
+            전체 {status("draft") + status("published") + status("hidden")}개
+          </Link>
+        </div>
+        <div className="flex flex-col items-stretch gap-3 md:flex-row md:items-center">
+          {stages.map((s, i) => (
+            <div key={s.key} className="contents">
+              {i > 0 && <ArrowRight size={20} className="hidden shrink-0 text-brand md:block" />}
+              <Link href={`/admin/posts?status=${s.key}`} className="flex flex-1 flex-col gap-3 rounded-[18px] bg-surface p-4 hover:bg-brand-soft">
+                <span className="flex items-center justify-between">
+                  <span className="text-[15px] font-bold text-foreground">{s.label}</span>
+                  <span className="text-[22px] font-bold text-foreground">{status(s.key)}</span>
+                </span>
+                <span className="text-xs text-secondary">{s.desc}</span>
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

@@ -76,6 +76,7 @@ model Post {
 
   aiSummary String @default("") // AI-generated post summary
   topic     String @default("") // "planning" | "dev" | "ai" | "archiving" | "homeserver" — src/lib/topics.ts
+  status    String @default("published") // "draft" | "published" | "hidden" — published와 함께 갱신 (D6)
 
   // 프로덕트 연결과 목록 표시 (IA_PS_001 / IA_PS_002)
   productId   Int?
@@ -90,6 +91,7 @@ model Post {
 
   @@index([productId])
   @@index([topic])
+  @@index([status])
 }
 
 model MediaAsset {
