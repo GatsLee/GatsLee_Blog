@@ -90,7 +90,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           }}
         />
       </head>
-      <body className="min-h-screen bg-background text-foreground antialiased">
+      {/* 한글은 단어 중간에서 줄을 바꾸지 않는다 */}
+      <body className="min-h-screen break-keep bg-background text-foreground antialiased">
         {/* Google Tag Manager (noscript) */}
         <noscript>
           <iframe

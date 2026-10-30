@@ -435,3 +435,13 @@ h1, h2, h3, h4, h5, h6 {
 @media print {
   header, footer, .checker-boundary, nav[aria-label="이 글의 목차"] { display: none !important; }
 }
+/* 연파랑 섹션에서 흰 섹션으로 내려갈 때 쓰는 경계 (HM/전환경계/프로젝트 → 제작배경) */
+.checker-boundary-down {
+  height: 168px;
+  background-image:
+    conic-gradient(var(--color-brand-soft) 25%, transparent 0 50%, var(--color-brand-soft) 0 75%, transparent 0),
+    linear-gradient(to bottom, var(--color-surface), var(--color-background));
+  background-size: 48px 48px, 100% 100%;
+  -webkit-mask-image: linear-gradient(to bottom, #000 30%, rgba(0,0,0,0.1));
+  mask-image: linear-gradient(to bottom, #000 30%, rgba(0,0,0,0.1));
+}

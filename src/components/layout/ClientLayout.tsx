@@ -19,10 +19,9 @@ export default function ClientLayout({
 }) {
   const pathname = usePathname();
   const isEditorPage = pathname?.startsWith("/write");
-  const isHomePage = pathname === "/";
-  // The resume page is the PDF source — nothing floating over it.
+  // 이력서 페이지는 PDF 원본이라 위에 아무것도 띄우지 않는다
   const isResumePage = pathname === "/resume";
-  const showChatWidget = !isEditorPage && !isHomePage && !isResumePage;
+  const showChatWidget = !isEditorPage && !isResumePage;
 
   return (
     <ThemeProvider>
