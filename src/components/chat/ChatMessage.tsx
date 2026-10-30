@@ -1,10 +1,8 @@
 "use client";
 
 import { motion } from "motion/react";
-import Image from "next/image";
 import { AlertCircle } from "lucide-react";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
-import { useTheme } from "@/context/ThemeContext";
 import SourceCard from "./SourceCard";
 import ThinkingToggle from "./ThinkingToggle";
 import MessageActions from "./MessageActions";
@@ -33,8 +31,6 @@ export default function ChatMessage({
   onRetry,
   locale,
 }: ChatMessageProps) {
-  const { theme } = useTheme();
-  const pawnSrc = theme === "dark" ? "/white_pawn.ico" : "/black_pawn.ico";
 
   // User message — right-aligned pill
   if (msg.role === "user") {
@@ -46,8 +42,7 @@ export default function ChatMessage({
         className="flex justify-end"
       >
         <div
-          className="max-w-[80%] px-3.5 py-2 text-[14px] leading-[1.55] rounded-[18px] rounded-br-[6px] font-light"
-          style={{ backgroundColor: "var(--color-foreground)", color: "var(--color-background)" }}
+          className="max-w-[80%] rounded-[14px] bg-brand px-3.5 py-2.5 text-[14px] font-medium leading-[22px] text-white"
         >
           {msg.content}
         </div>
@@ -61,12 +56,8 @@ export default function ChatMessage({
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className="group flex flex-col gap-1 chat-assistant-bar"
+      className="group flex max-w-[88%] flex-col gap-2"
     >
-      <div className="flex items-center gap-1.5">
-        <Image src={pawnSrc} alt="" width={11} height={11} className="opacity-60" />
-        <span className="editorial-label text-[9px] text-muted">ASSISTANT</span>
-      </div>
 
       {msg.error ? (
         <div className="flex items-start gap-2 mt-1">
@@ -82,17 +73,17 @@ export default function ChatMessage({
           </div>
         </div>
       ) : (
-        <div className="prose-chat text-[14px] leading-[1.65] text-foreground">
+        <div className="prose-chat rounded-[14px] bg-surface px-3.5 py-3 text-[14px] leading-[22px] text-foreground">
           <MarkdownRenderer content={msg.content} />
         </div>
       )}
 
       {msg.sources && msg.sources.length > 0 && (
-        <div className="flex flex-col mt-3 pt-2 border-t border-border">
-          <span className="editorial-label text-[9px] text-muted mb-1">
-            {locale === "ko" ? "출처" : "SOURCES"}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[11px] font-bold text-secondary">
+            {locale === "ko" ? "참고한 글" : "Sources"}
           </span>
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-1.5">
             {msg.sources.slice(0, 3).map((s, si) => (
               <SourceCard key={si} source={s} index={si} />
             ))}

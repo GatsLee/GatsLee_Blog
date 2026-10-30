@@ -55,8 +55,8 @@ export const FOLLOW_UPS: Record<string, Record<string, string[]>> = {
 export const STAGE_TEXT: Record<"ko" | "en", Record<ChatStage, string>> = {
   ko: {
     idle: "",
-    searching: "포스트 검색 중",
-    generating: "응답 작성 중",
+    searching: "블로그 글에서 관련 내용을 찾는 중",
+    generating: "답변을 쓰는 중",
     streaming: "",
   },
   en: {

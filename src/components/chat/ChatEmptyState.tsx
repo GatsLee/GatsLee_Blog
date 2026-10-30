@@ -1,65 +1,50 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { ArrowRight } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
-import { CATEGORY_ICONS } from "./chatTypes";
 
-interface SuggestionItem {
-  readonly text: string;
-}
 interface SuggestionGroup {
-  readonly id: string;
-  readonly label: string;
-  readonly icon: string;
-  readonly items: readonly SuggestionItem[];
+  readonly items: readonly { readonly text: string }[];
 }
 
 interface ChatEmptyStateProps {
   onPick: (text: string) => void;
 }
 
+// IA_CB_00101 제안. 추천 질문은 사용 중인 FAQ 대표 질문 5개, 불러오지 못하면 기본 예시를 쓴다
 export default function ChatEmptyState({ onPick }: ChatEmptyStateProps) {
-  const { t, locale } = useLanguage();
-  const groups: readonly SuggestionGroup[] = (t.home.suggestionGroups ?? []) as readonly SuggestionGroup[];
-  const hint = (t.home as { chatEmptyHint?: string }).chatEmptyHint;
+  const { t } = useLanguage();
+  const fallback = ((t.home.suggestionGroups ?? []) as readonly SuggestionGroup[]).flatMap((g) => g.items.map((i) => i.text)).slice(0, 5);
+  const [suggestions, setSuggestions] = useState<string[] | null>(null);
+  const hint = (t.home as { chatEmptyHint?: string }).chatEmptyHint ?? "궁금한 점을 자유롭게 물어보세요";
+
+  useEffect(() => {
+    fetch("/api/chat/suggestions")
+      .then((r) => r.json())
+      .then((d) => setSuggestions(Array.isArray(d.suggestions) && d.suggestions.length ? d.suggestions : null))
+      .catch(() => setSuggestions(null));
+  }, []);
+
+  const list = suggestions ?? fallback;
 
   return (
-    <div className="flex flex-col h-full px-1 pt-2 pb-4">
-      <div className="text-center mb-5">
-        <p className="text-[12px] editorial-label text-muted">
-          {locale === "ko" ? "AI ASSISTANT" : "AI ASSISTANT"}
-        </p>
-        <p className="text-sm text-secondary font-light mt-1.5">
-          {hint || (locale === "ko" ? "궁금한 점을 자유롭게 물어보세요" : "Ask anything about Gats Lab")}
-        </p>
+    <div className="flex flex-col gap-3.5">
+      <div className="flex flex-col gap-1 py-2">
+        <p className="text-base font-bold leading-6 text-foreground">안녕하세요, Gats Lee의 블로그 AI입니다.</p>
+        <p className="text-[13px] leading-5 text-secondary">{hint}</p>
       </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-        {groups.map((g) => {
-          const Icon = CATEGORY_ICONS[g.icon];
-          return (
-            <div
-              key={g.id}
-              className="border border-border rounded-xl p-3 hover:border-border-strong transition-colors bg-background"
-            >
-              <div className="flex items-center gap-1.5 mb-2">
-                {Icon && <Icon size={12} strokeWidth={1.5} className="text-muted" />}
-                <span className="editorial-label text-[9px] text-muted">{g.label}</span>
-              </div>
-              <div className="flex flex-col">
-                {g.items.map((s, i) => (
-                  <button
-                    key={i}
-                    onClick={() => onPick(s.text)}
-                    className="block w-full text-left text-[12px] text-secondary hover:text-foreground py-1 leading-snug transition-colors cursor-pointer"
-                  >
-                    {s.text}
-                  </button>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <p className="text-xs font-bold leading-[18px] text-muted">자주 묻는 질문</p>
+      {list.map((q) => (
+        <button
+          key={q}
+          onClick={() => onPick(q)}
+          className="flex items-center gap-2 rounded-xl border border-border py-[11px] pl-3.5 pr-3 text-left text-[13px] font-medium leading-5 text-foreground transition-colors hover:border-brand hover:bg-surface"
+        >
+          <span className="flex-1">{q}</span>
+          <ArrowRight size={16} className="text-brand" />
+        </button>
+      ))}
     </div>
   );
 }

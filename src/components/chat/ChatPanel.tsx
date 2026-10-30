@@ -56,7 +56,7 @@ function DesktopModal({
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96, y: 12 }}
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed z-[60] bottom-6 right-6 w-[480px] h-[640px] flex flex-col border border-border-strong shadow-2xl overflow-hidden rounded-2xl"
+      className="fixed z-[60] bottom-6 right-6 w-[400px] h-[680px] max-h-[calc(100vh-48px)] flex flex-col border border-border shadow-[0_16px_40px_rgba(24,25,27,0.14)] overflow-hidden rounded-[20px]"
       style={{ backgroundColor: "var(--color-background)" }}
       role="dialog"
       aria-label={ariaLabel}

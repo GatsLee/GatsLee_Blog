@@ -19,7 +19,7 @@ const ChatFAB = forwardRef<HTMLButtonElement, ChatFABProps>(({ onClick, locale }
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.97 }}
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed bottom-6 right-6 z-50 shadow-lg cursor-pointer flex items-center bg-foreground text-background h-12 sm:h-11 rounded-full px-5 hover:opacity-95 transition-opacity"
+      className="fixed bottom-6 right-6 z-50 flex h-12 cursor-pointer items-center rounded-full bg-brand px-5 text-white shadow-[0_8px_24px_rgba(49,92,244,0.3)] transition-opacity hover:opacity-95 sm:h-11"
       aria-label={locale === "ko" ? "Gats 채팅 열기" : "Open Gats chat"}
       aria-expanded={false}
     >

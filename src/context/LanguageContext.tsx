@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { translations, type Locale, type TranslationKeys } from "@/i18n/translations";
 
 interface LanguageContextValue {
@@ -15,26 +15,9 @@ const LanguageContext = createContext<LanguageContextValue>({
   setLocale: () => {},
 });
 
-function detectLocale(): Locale {
-  // 1. Check localStorage preference
-  if (typeof window !== "undefined") {
-    const saved = localStorage.getItem("locale");
-    if (saved === "ko" || saved === "en") return saved;
-
-    // 2. Check browser language
-    const lang = navigator.language || "";
-    if (lang.startsWith("ko")) return "ko";
-  }
-  // 3. Default to English for non-Korean browsers
-  return "en";
-}
-
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  // 헤더에서 언어 전환을 뺐으므로(D3) 브라우저 언어나 예전 저장값과 상관없이 한국어로 시작한다
   const [locale, setLocaleState] = useState<Locale>("ko");
-
-  useEffect(() => {
-    setLocaleState(detectLocale());
-  }, []);
 
   const setLocale = (l: Locale) => {
     setLocaleState(l);

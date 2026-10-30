@@ -11,29 +11,15 @@ export default function ChatLoading({ stage, locale }: ChatLoadingProps) {
   if (stage === "idle" || stage === "streaming") return null;
   const text = STAGE_TEXT[locale][stage];
 
+  // IA_CB_00103 생성 중: 연파랑 말풍선 안 점 세 개 + 진행 문구
   return (
-    <div className="flex items-center gap-3 chat-assistant-bar py-1">
-      <div className="flex items-center gap-1.5">
-        <span
-          className={`w-1.5 h-1.5 rounded-full transition-colors ${
-            stage === "searching" ? "bg-foreground animate-pulse" : "bg-foreground"
-          }`}
-        />
-        <span className="w-3 h-px bg-border" aria-hidden />
-        <span
-          className={`w-1.5 h-1.5 rounded-full transition-colors ${
-            stage === "generating"
-              ? "bg-foreground animate-pulse"
-              : stage === "searching"
-              ? "bg-border"
-              : "bg-foreground"
-          }`}
-        />
+    <div className="flex flex-col items-start gap-2">
+      <div className="flex items-center gap-1.5 rounded-[14px] bg-surface px-3.5 py-3">
+        <span className="h-2 w-2 animate-pulse rounded-full bg-brand" />
+        <span className="h-2 w-2 animate-pulse rounded-full bg-brand/60 [animation-delay:0.2s]" />
+        <span className="h-2 w-2 animate-pulse rounded-full bg-brand/30 [animation-delay:0.4s]" />
       </div>
-      <span className="text-[11px] editorial-label text-muted">
-        {text}
-        <span className="inline-block ml-0.5 animate-pulse">···</span>
-      </span>
+      <span className="text-xs text-secondary">{text}…</span>
     </div>
   );
 }

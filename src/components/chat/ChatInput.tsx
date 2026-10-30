@@ -24,15 +24,14 @@ const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
 
     return (
       <div
-        className="px-3 pt-2 pb-3 border-t border-border shrink-0"
+        className="shrink-0 border-t border-border px-3 pt-3"
         style={{
-          backgroundColor: "var(--color-surface)",
+          backgroundColor: "var(--color-background)",
           paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
         }}
       >
         <div
-          className="flex items-center gap-2 border border-border rounded-xl overflow-hidden focus-within:border-foreground transition-colors"
-          style={{ backgroundColor: "var(--color-background)" }}
+          className="flex items-center gap-2"
         >
           <input
             ref={ref}
@@ -42,16 +41,16 @@ const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
             onKeyDown={(e) => e.key === "Enter" && onSubmit()}
             placeholder={placeholder}
             disabled={disabled || ollamaOffline}
-            className="flex-1 bg-transparent px-3 py-3 sm:py-2.5 text-sm text-foreground placeholder:text-muted outline-none font-light disabled:opacity-50"
+            className="h-11 flex-1 rounded-xl border border-border bg-surface-2 px-3.5 text-sm text-foreground outline-none placeholder:text-muted focus:border-brand disabled:opacity-50"
             aria-label={locale === "ko" ? "메시지 입력" : "Message input"}
           />
           <button
             onClick={onSubmit}
             disabled={!value.trim() || disabled || ollamaOffline}
-            className="mr-2 p-1.5 rounded-full bg-foreground text-background disabled:opacity-30 hover:opacity-80 transition-opacity cursor-pointer"
+            className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-brand text-white transition-opacity disabled:bg-[#c9d6fb]"
             aria-label={locale === "ko" ? "메시지 보내기" : "Send message"}
           >
-            <ArrowUp size={14} strokeWidth={2} />
+            <ArrowUp size={18} strokeWidth={2} />
           </button>
         </div>
       </div>
