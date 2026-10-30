@@ -54,3 +54,6 @@ tests/reports/
 # uploaded media (docker volume in prod)
 /public/uploads/
 prisma/*.bak-*
+
+# claude project instructions (local only)
+CLAUDE.md
