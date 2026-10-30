@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { List } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { ChevronDown } from "lucide-react";
 
 interface TocItem {
   id: string;
@@ -9,6 +9,7 @@ interface TocItem {
   level: 2 | 3;
 }
 
+// MarkdownRenderer의 heading id와 같은 규칙
 function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -18,124 +19,102 @@ function slugify(text: string): string {
     .trim();
 }
 
-function parseToc(content: string): TocItem[] {
+export function parseToc(content: string): TocItem[] {
   const items: TocItem[] = [];
-  const lines = content.split("\n");
   let inCodeBlock = false;
-
-  for (const line of lines) {
+  for (const line of content.split("\n")) {
     if (line.trim().startsWith("```")) {
       inCodeBlock = !inCodeBlock;
       continue;
     }
     if (inCodeBlock) continue;
-
     const match = line.match(/^(#{2,3})\s+(.+)$/);
     if (match) {
       const text = match[2].replace(/[*_`\[\]()!]/g, "").trim();
-      items.push({
-        id: slugify(text),
-        text,
-        level: match[1].length as 2 | 3,
-      });
+      items.push({ id: slugify(text), text, level: match[1].length as 2 | 3 });
     }
   }
   return items;
 }
 
-export default function TableOfContents({ content }: { content: string }) {
-  const items = parseToc(content);
+function useActiveHeading(items: TocItem[]) {
   const [activeId, setActiveId] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
-
-  const handleScroll = useCallback(() => {
-    const headings = items
-      .map((item) => document.getElementById(item.id))
-      .filter(Boolean) as HTMLElement[];
-
+  const onScroll = useCallback(() => {
     let current = "";
-    for (const heading of headings) {
-      if (heading.getBoundingClientRect().top <= 120) {
-        current = heading.id;
-      }
+    for (const item of items) {
+      const el = document.getElementById(item.id);
+      if (el && el.getBoundingClientRect().top <= 140) current = item.id;
     }
     setActiveId(current);
   }, [items]);
-
   useEffect(() => {
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [handleScroll]);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    const raf = requestAnimationFrame(onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(raf);
+    };
+  }, [onScroll]);
+  return activeId;
+}
 
+function jump(e: React.MouseEvent, id: string) {
+  e.preventDefault();
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+}
+
+// IA_PS_002 왼쪽 "이 글의 목차" (xl 이상)
+export function TocSidebar({ content }: { content: string }) {
+  const items = useMemo(() => parseToc(content), [content]);
+  const activeId = useActiveHeading(items);
   if (items.length < 2) return null;
-
   return (
-    <>
-      {/* Desktop: sticky sidebar */}
-      <nav className="hidden xl:block" aria-label="Table of contents">
-        <div className="sticky top-24 max-h-[calc(100vh-8rem)] overflow-y-auto">
-          <p className="text-xs font-mono text-muted uppercase tracking-widest mb-3">
-            On this page
-          </p>
-          <ul className="space-y-1 border-l border-border">
-            {items.map((item) => (
-              <li key={item.id}>
-                <a
-                  href={`#${item.id}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth" });
-                  }}
-                  className={`block text-xs leading-5 transition-colors border-l-2 -ml-px ${
-                    item.level === 3 ? "pl-6" : "pl-3"
-                  } ${
-                    activeId === item.id
-                      ? "border-accent text-accent font-medium"
-                      : "border-transparent text-muted hover:text-foreground"
-                  }`}
-                >
-                  {item.text}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </nav>
-
-      {/* Mobile: collapsible */}
-      <div className="xl:hidden mb-6">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 text-xs text-muted hover:text-foreground transition-colors cursor-pointer"
+    <nav aria-label="이 글의 목차" className="sticky top-32 flex flex-col gap-5">
+      <p className="text-sm font-bold leading-[22px] text-foreground">이 글의 목차</p>
+      {items.map((item) => (
+        <a
+          key={item.id}
+          href={`#${item.id}`}
+          onClick={(e) => jump(e, item.id)}
+          className={`text-sm leading-[22px] transition-colors ${item.level === 3 ? "pl-3" : ""} ${
+            activeId === item.id ? "font-medium text-brand" : "text-secondary hover:text-foreground"
+          }`}
         >
-          <List size={14} />
-          <span className="font-mono uppercase tracking-wider">
-            {isOpen ? "Hide" : "Table of Contents"}
-          </span>
-        </button>
-        {isOpen && (
-          <ul className="mt-3 space-y-1 border-l border-border pl-3">
-            {items.map((item) => (
-              <li key={item.id}>
-                <a
-                  href={`#${item.id}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth" });
-                    setIsOpen(false);
-                  }}
-                  className={`block text-xs leading-5 text-muted hover:text-foreground transition-colors ${
-                    item.level === 3 ? "pl-4" : ""
-                  }`}
-                >
-                  {item.text}
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </>
+          {item.text}
+        </a>
+      ))}
+    </nav>
+  );
+}
+
+// 도입부 아래 접이식 목차 (xl 미만)
+export function TocCollapsible({ content }: { content: string }) {
+  const items = useMemo(() => parseToc(content), [content]);
+  const [open, setOpen] = useState(false);
+  if (items.length < 2) return null;
+  return (
+    <div className="rounded-lg bg-surface">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex h-14 w-full items-center gap-3 px-5 text-left"
+      >
+        <ChevronDown size={16} className={`text-brand transition-transform ${open ? "rotate-180" : ""}`} />
+        <span className="text-base font-medium text-foreground">이 글의 목차</span>
+        <span className="text-[13px] text-secondary">{items.length}개 항목</span>
+      </button>
+      {open && (
+        <ol className="flex flex-col gap-2 px-12 pb-5">
+          {items.map((item) => (
+            <li key={item.id} className={item.level === 3 ? "pl-3" : ""}>
+              <a href={`#${item.id}`} onClick={(e) => jump(e, item.id)} className="text-sm text-secondary hover:text-brand">
+                {item.text}
+              </a>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
   );
 }

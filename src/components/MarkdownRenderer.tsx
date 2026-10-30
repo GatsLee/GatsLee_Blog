@@ -285,9 +285,33 @@ interface MarkdownRendererProps {
   content: string;
 }
 
+// 에디터가 내보낸 마크다운은 표의 행 사이에 빈 줄이 끼어 표로 인식되지 않는다.
+// 코드 블록 밖에서 `|`로 시작·끝나는 줄 사이의 빈 줄만 지운다.
+function joinTableRows(md: string): string {
+  const out: string[] = [];
+  let inCode = false;
+  const lines = md.split("\n");
+  const isRow = (l: string) => /^\s*\|.*\|\s*$/.test(l);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim().startsWith("```")) inCode = !inCode;
+    if (!inCode && line.trim() === "" && out.length && isRow(out[out.length - 1])) {
+      let j = i;
+      while (j < lines.length && lines[j].trim() === "") j++;
+      if (j < lines.length && isRow(lines[j])) {
+        i = j - 1;
+        continue;
+      }
+    }
+    out.push(line);
+  }
+  return out.join("\n");
+}
+
 export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
   const { theme } = useTheme();
   const components = useMemo(() => buildComponents(theme), [theme]);
+  const source = useMemo(() => joinTableRows(content), [content]);
 
   return (
     <div className="markdown-body text-base leading-7">
@@ -296,7 +320,7 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
         rehypePlugins={[rehypeHighlight, rehypeRaw]}
         components={components}
       >
-        {content}
+        {source}
       </ReactMarkdown>
     </div>
   );

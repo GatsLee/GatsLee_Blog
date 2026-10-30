@@ -1,33 +1,18 @@
-export default function InsightsLoading() {
+// 글 목록 로딩 뼈대
+export default function Loading() {
   return (
-    <div className="animate-pulse max-w-7xl mx-auto">
-      {/* Breadcrumb skeleton */}
-      <div className="mb-6 flex items-center gap-2">
-        <div className="h-4 w-16 bg-hover rounded" />
-        <div className="h-4 w-4 bg-hover rounded" />
-        <div className="h-4 w-24 bg-hover rounded" />
-      </div>
-
-      {/* Title skeleton */}
-      <div className="mb-8">
-        <div className="h-10 w-64 bg-hover rounded mb-3" />
-        <div className="h-4 w-20 bg-hover rounded" />
-      </div>
-
-      {/* Post skeletons */}
-      <div className="space-y-12">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="pl-8 py-4 border-l-2 border-hover">
-            <div className="h-3 w-24 bg-hover rounded mb-3" />
-            <div className="h-8 w-3/4 bg-hover rounded mb-4" />
-            <div className="h-4 w-full bg-hover rounded mb-2" />
-            <div className="h-4 w-2/3 bg-hover rounded mb-4" />
-            <div className="flex gap-2">
-              <div className="h-6 w-16 bg-hover rounded" />
-              <div className="h-6 w-16 bg-hover rounded" />
-            </div>
-          </div>
-        ))}
+    <div className="mx-auto max-w-[1184px] animate-pulse px-6 pb-20 pt-14">
+      <div className="h-5 w-32 rounded bg-surface" />
+      <div className="mt-8 h-12 w-40 rounded bg-surface" />
+      <div className="mt-3 h-6 w-96 max-w-full rounded bg-surface" />
+      <div className="mt-12 flex gap-12">
+        <div className="hidden w-[175px] flex-col gap-3 md:flex">
+          {Array.from({ length: 6 }, (_, i) => <div key={i} className="h-12 rounded-lg bg-surface" />)}
+        </div>
+        <div className="flex-1">
+          <div className="h-[52px] rounded-lg bg-surface" />
+          {Array.from({ length: 4 }, (_, i) => <div key={i} className="mt-8 h-28 rounded bg-surface" />)}
+        </div>
       </div>
     </div>
   );

@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { rateLimit } from "@/lib/rate-limit";
+import { getSession } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const postId = searchParams.get("postId");
 
   if (!postId) {
-    // No postId — return all comments (for admin dashboard)
+    // postId 없이 전체 댓글을 보는 건 어드민만
+    const session = await getSession();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const comments = await prisma.comment.findMany({
       orderBy: { createdAt: "desc" },
       include: { post: { select: { title: true, slug: true } } },
@@ -31,9 +34,11 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { postId, author, content } = body;
+  const postId = body.postId;
+  const author = typeof body.author === "string" ? body.author.trim() : "";
+  const content = typeof body.content === "string" ? body.content.trim() : "";
 
-  if (!postId || !author || !content) {
+  if (!postId || !author || !content || author.length > 40 || content.length > 2000) {
     return NextResponse.json(
       { error: "Missing required fields" },
       { status: 400 }

@@ -1,115 +1,156 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/db";
-import CommentSection from "@/components/posts/CommentSection";
+import { getSession } from "@/lib/auth";
+import { routeFor } from "@/lib/categories";
+import { topicLabel } from "@/lib/topics";
+import { koreanDate } from "@/lib/format";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
-import TableOfContents from "@/components/posts/TableOfContents";
-import InsightBackLink from "./InsightBackLink";
-import ReadingProgress from "@/components/posts/ReadingProgress";
-import ShareButton from "@/components/posts/ShareButton";
+import CommentSection from "@/components/posts/CommentSection";
+import { TocCollapsible, TocSidebar } from "@/components/posts/TableOfContents";
+import PostTools from "@/components/posts/PostTools";
+import MarginFootnotes from "@/components/posts/MarginFootnotes";
+import Breadcrumb from "@/components/common/Breadcrumb";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
+type Params = Promise<{ slug: string }>;
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { slug } = await params;
   const post = await prisma.post.findUnique({
     where: { slug },
-    select: { title: true, description: true, content: true },
+    select: { title: true, description: true, content: true, published: true },
   });
-  if (!post) return {};
+  if (!post || !post.published) return {};
   const description = post.description || post.content.slice(0, 160).replace(/\n/g, " ");
-  return {
-    title: post.title,
-    description,
-    openGraph: {
-      title: post.title,
-      description,
-      type: "article",
-    },
-  };
+  return { title: post.title, description, openGraph: { title: post.title, description, type: "article" } };
 }
 
-export default async function InsightDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+// IA_PS_002 글 상세 · 00201 댓글 있음 · 00203 초안 미리보기
+export default async function InsightDetailPage({ params }: { params: Params }) {
   const { slug } = await params;
-
   const post = await prisma.post.findUnique({
     where: { slug },
+    include: { product: { select: { name: true, slug: true, tagline: true, published: true } } },
   });
-
   if (!post) notFound();
 
-  const wordCount = post.content.split(/\s+/).length;
-  const readingTime = Math.max(1, Math.round(wordCount / 200));
+  // 비공개 글은 어드민에게만 초안 안내와 함께 보여준다
+  const isDraft = !post.published;
+  if (isDraft && !(await getSession())) notFound();
+
   let tags: string[] = [];
-  try { tags = JSON.parse(post.tags); } catch { /* ignore */ }
+  try {
+    tags = JSON.parse(post.tags);
+  } catch {
+    /* 태그 형식이 깨진 글은 태그 없이 보여준다 */
+  }
+
+  // 함께 읽을 글: 지정한 관련 글이 있으면 그것, 없으면 같은 주제 최근 글
+  let relatedIds: number[] = [];
+  try {
+    relatedIds = (JSON.parse(post.relatedPosts) as unknown[]).map(Number).filter(Boolean);
+  } catch {
+    /* 비어 있으면 같은 주제로 채운다 */
+  }
+  const related = await prisma.post.findMany({
+    where: {
+      published: true,
+      locale: "ko",
+      id: relatedIds.length ? { in: relatedIds } : { not: post.id },
+      ...(relatedIds.length ? {} : { topic: post.topic || "__none__" }),
+    },
+    orderBy: { createdAt: "desc" },
+    take: 2,
+    select: { title: true, slug: true, category: true },
+  });
+  const project = post.product?.published ? post.product : null;
+  const topic = topicLabel(post.topic);
 
   return (
-    <div className="max-w-7xl mx-auto animate-fadeIn">
-      <ReadingProgress />
-      <div className="flex gap-8">
-        {/* Main article */}
-        <article className="max-w-4xl flex-1 min-w-0">
-          <div className="bg-surface min-h-[600px] card-border p-4 sm:p-6 md:p-12 relative transition-colors">
-            <InsightBackLink />
+    <article>
+      {isDraft && (
+        <div className="bg-brand-soft px-6 py-3 text-center text-sm text-brand">
+          비공개 초안입니다. 방문자에게는 보이지 않아요.
+        </div>
+      )}
 
-            <div className="pb-8 mb-8 mt-4">
-              <h1
-                className="text-3xl md:text-4xl font-semibold text-foreground mb-4 tracking-tight"
-                style={{ fontFamily: "'Manrope', 'Pretendard', sans-serif" }}
-              >
-                {post.title}
-              </h1>
-              <div className="flex items-center flex-wrap gap-x-4 gap-y-2 text-xs text-muted tracking-wide">
-                <span>{post.createdAt.toISOString().split("T")[0]}</span>
-                <span className="text-border-strong">|</span>
-                <span className="capitalize">{post.category}</span>
-                <span className="text-border-strong">|</span>
-                <span>{readingTime} min read</span>
-                <span className="text-border-strong">|</span>
-                <ShareButton title={post.title} />
-              </div>
-              {tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {tags.slice(0, 3).map((tag) => (
-                    <span key={tag} className="px-2 py-0.5 text-xs font-mono bg-hover text-muted rounded card-border">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+      <header className="mx-auto flex max-w-[1184px] flex-col gap-[18px] px-6 pb-16 pt-14">
+        <Breadcrumb
+          items={[{ label: "글", href: "/insights" }, ...(topic ? [{ label: topic, href: `/insights?topic=${post.topic}` }] : [])]}
+        />
+        <h1 className="text-[36px] font-bold leading-[50px] text-foreground md:text-[56px] md:leading-[78px]">{post.title}</h1>
+        {post.description && (
+          <p className="text-[20px] leading-8 text-secondary md:text-[25px] md:leading-10">{post.description}</p>
+        )}
+        {tags.length > 0 && (
+          <ul className="flex flex-wrap gap-2">
+            {tags.slice(0, 5).map((tag) => (
+              <li key={tag} className="rounded-full bg-brand px-3 py-[5px] text-sm font-medium leading-[22px] text-white">
+                {tag}
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="mt-2 flex items-center justify-between border-t border-border pt-4">
+          <time dateTime={post.createdAt.toISOString()} className="text-sm text-secondary">
+            {koreanDate(post.createdAt)}
+          </time>
+          <PostTools />
+        </div>
+        <div className="xl:hidden">
+          <TocCollapsible content={post.content} />
+        </div>
+      </header>
 
-            {post.aiSummary && (
-              <div className="my-4 rounded-lg border border-accent/30 bg-accent/5 px-5 py-4">
-                <p className="text-xs font-mono text-accent mb-2 uppercase tracking-widest">AI 요약</p>
-                <div className="text-sm text-foreground/80 leading-relaxed prose prose-sm max-w-none prose-p:my-1 prose-strong:text-foreground prose-li:my-0.5 prose-ul:my-1">
-                  <MarkdownRenderer content={post.aiSummary} />
-                </div>
-              </div>
-            )}
-
-            {/* Mobile TOC — hidden on desktop where sidebar TOC is shown */}
-            <div className="xl:hidden">
-              <TableOfContents content={post.content} />
-            </div>
-
-            <MarkdownRenderer content={post.content} />
-
-            <CommentSection postId={post.id} />
-          </div>
-        </article>
-
-        {/* Desktop TOC sidebar */}
-        <aside className="hidden xl:block w-56 shrink-0">
-          <TableOfContents content={post.content} />
+      <div className="mx-auto flex max-w-[1184px] gap-8 px-6 pb-8">
+        <aside className="hidden w-[176px] shrink-0 xl:block">
+          <TocSidebar content={post.content} />
+        </aside>
+        <div id="post-body" className="article-body min-w-0 max-w-[720px] flex-1">
+          <MarkdownRenderer content={post.content} />
+        </div>
+        <aside className="hidden w-[224px] shrink-0 xl:block">
+          <MarginFootnotes articleId="post-body" />
         </aside>
       </div>
-    </div>
+
+      <div className="mx-auto flex max-w-[1184px] flex-col gap-14 px-6 pb-24 xl:pl-[232px] xl:pr-[280px]">
+        {project && (
+          <Link
+            href={`/products/${project.slug}`}
+            className="flex items-center justify-between gap-6 rounded-2xl bg-surface p-6 transition-colors hover:bg-brand-soft"
+          >
+            <span>
+              <span className="block text-sm text-brand">관련 프로젝트</span>
+              <span className="mt-1 block text-[26px] font-bold leading-[38px] text-foreground">{project.name}</span>
+              {project.tagline && <span className="block text-base text-secondary">{project.tagline}</span>}
+            </span>
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-background text-brand">
+              <ArrowRight size={20} />
+            </span>
+          </Link>
+        )}
+
+        {related.length > 0 && (
+          <section>
+            <h2 className="text-[26px] font-bold leading-[38px] text-foreground">함께 읽을 글</h2>
+            <ul className="mt-4">
+              {related.map((r) => (
+                <li key={r.slug} className="border-t border-border">
+                  <Link href={routeFor(r.category, r.slug)} className="flex items-center justify-between gap-4 py-4 text-lg font-bold text-foreground hover:text-brand">
+                    {r.title}
+                    <ArrowRight size={16} className="shrink-0 text-brand" />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <CommentSection postId={post.id} />
+      </div>
+    </article>
   );
 }

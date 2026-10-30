@@ -74,6 +74,7 @@ model Post {
   caseBeats String?
 
   aiSummary String @default("") // AI-generated post summary
+  topic     String @default("") // "planning" | "dev" | "ai" | "archiving" | "homeserver" — src/lib/topics.ts
 
   // 프로덕트 연결과 목록 표시 (IA_PS_001 / IA_PS_002)
   productId   Int?
@@ -87,6 +88,7 @@ model Post {
   comments  Comment[]
 
   @@index([productId])
+  @@index([topic])
 }
 
 model MediaAsset {

@@ -416,3 +416,22 @@ h1, h2, h3, h4, h5, h6 {
   text-transform: uppercase;
   color: var(--color-brand);
 }
+
+/* 글 상세 본문 (IA_PS_002). MarkdownRenderer 기본값을 디자인 값으로 덮는다 */
+.article-body { font-size: 18px; line-height: 30px; color: var(--color-foreground); }
+.article-body .max-w-prose { max-width: none; }
+.article-body p, .article-body li { font-size: 18px; line-height: 30px; }
+.article-body p { margin: 0 0 20px; }
+.article-body h1, .article-body h2 { font-size: 26px; line-height: 40px; font-weight: 700; margin: 44px 0 20px; scroll-margin-top: 120px; }
+.article-body h3 { font-size: 21px; line-height: 32px; font-weight: 700; margin: 32px 0 16px; scroll-margin-top: 120px; }
+.article-body > div > :first-child { margin-top: 0; }
+.article-body blockquote { border-left: 3px solid var(--color-brand); padding: 4px 0 4px 20px; font-style: normal; font-weight: 700; font-size: 21px; line-height: 32px; color: var(--color-foreground); }
+.article-body sup a { color: var(--color-brand); text-decoration: none; font-size: 0.7em; }
+.article-body section[data-footnotes] { margin-top: 48px; border-top: 1px solid var(--color-border); padding-top: 16px; font-size: 14px; color: var(--color-secondary); }
+.article-body section[data-footnotes] li { font-size: 14px; line-height: 23px; }
+@media (min-width: 1280px) {
+  .article-body section[data-footnotes] { display: none; }
+}
+@media print {
+  header, footer, .checker-boundary, nav[aria-label="이 글의 목차"] { display: none !important; }
+}
