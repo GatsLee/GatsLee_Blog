@@ -33,6 +33,7 @@ model Product {
   evidence     String @default("{}") // JSON: {quote, source, numbers:[{value,label}], note}
   features     String @default("[]") // JSON: [{label, sub, body, shots:[]}]
   flowEmbedUrl String @default("") // 서비스 플로우 Figma 임베드
+  detail       String @default("{}") // JSON: ProductDetail (src/lib/product.ts)
 
   published Boolean  @default(true)
   sortOrder Int      @default(0)

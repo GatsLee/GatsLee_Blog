@@ -320,8 +320,8 @@ W-/M- 임시 번호의 대응표는 커밋 `0d94bbc` 시점의 이 문서에 있
 | 주제 저장 위치 | `Post`에 주제 필드가 없다. 코드는 태그 필터를 쓴다 | 글 목록 필터, 어드민 글 관리 |
 | 글 상태 | 디자인은 초안·발행됨·숨김 3단계, `Post`는 `published` 불리언 하나 | 어드민 글 탭 |
 | 프로젝트 댓글 | `Comment`가 `Post`에만 연결 | `IA_PD_00202` |
-| 프로젝트 어드민 API | `src/app/api/admin`에 products가 없다 | `IA_AD_003` 계열 전체 |
-| 프로젝트 상세 필드 | 주요 사용자·가설·핵심 결정·대표 이미지 여러 장에 대응하는 컬럼이 없다 | `IA_PD_002`, `IA_AD_00301` |
+| 프로젝트 어드민 API | 해결. `/api/admin/products`(생성), `/api/admin/products/[id]`(수정·삭제) | `IA_AD_003` 계열 전체 |
+| 프로젝트 상세 필드 | 해결. `Product.detail` JSON 한 칸에 담는다 (D9) | `IA_PD_002`, `IA_AD_00301` |
 | 언어 전환 | 코드 헤더에는 KO/EN 토글이 있고 디자인에는 없다 | 헤더 전체 |
 | 이력서 | 디자인은 PDF 새 탭, 코드는 `/resume` 구조화 페이지(`TopNav`, `HomeContent`, `ClientLayout`, `ResumeEditorTab`) | 헤더, 어드민 이력서 모달 |
 | 404 | `not-found.tsx`가 없어 Next 기본 화면이 뜬다 | `IA_SY_001` |

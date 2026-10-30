@@ -89,3 +89,49 @@ export function roleText(roles: string[], headcount: number): string {
   if (!joined) return headcount > 0 ? `${headcount}인` : "";
   return headcount > 0 ? `${joined} · ${headcount}인` : joined;
 }
+
+/**
+ * 상세 화면 전용 값 (IA_PD_002). 목록 카드에 쓰지 않는 항목을 Product.detail 한 칸에 모은다.
+ * problem.body가 비면 예전 problemBody를 읽는다.
+ */
+export interface ProductDetail {
+  headline?: string;
+  intro?: string;
+  gallery?: string[];
+  audiences?: { who: string; gain: string }[];
+  problem?: { summary?: string; body?: string };
+  hypothesis?: { summary?: string; body?: string; metrics?: string[] };
+  decisions?: { title: string; body: string; why: string; so: string }[];
+}
+
+export const parseDetail = (raw: string | null | undefined) => parse<ProductDetail>(raw, {});
+
+/** 진행 단계 도장 4종 (IA_AD_00302). 고르면 stage도 같이 맞춘다. */
+export const STAMPS = ["기획 완료", "개발 중", "운영 중", "배포됨"] as const;
+export type Stamp = (typeof STAMPS)[number];
+
+export function stageOfStamp(stamp: string): ProductStage {
+  if (stamp === "개발 중") return "building";
+  if (stamp === "운영 중" || stamp === "배포됨") return "operating";
+  return "planning";
+}
+
+/** 공개 전 확인 5항목. 모두 채워야 공개할 수 있다. */
+export function publishChecks(p: {
+  name: string;
+  slug: string;
+  tagline: string;
+  summary: string[];
+  coverImage: string;
+  problemSummary: string;
+  hypothesisSummary: string;
+  featureCount: number;
+}) {
+  return [
+    { label: "이름과 주소", ok: Boolean(p.name.trim() && p.slug.trim()) },
+    { label: "한 줄 소개와 두 줄 설명", ok: Boolean(p.tagline.trim() && p.summary[0]?.trim()) },
+    { label: "대표 이미지 (4:3)", ok: Boolean(p.coverImage) },
+    { label: "문제와 가설", ok: Boolean(p.problemSummary.trim() && p.hypothesisSummary.trim()) },
+    { label: "핵심 기능 1개 이상", ok: p.featureCount > 0 },
+  ];
+}
