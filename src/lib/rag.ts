@@ -221,14 +221,13 @@ function rrfFusion(vectorIds: number[], bm25Ids: number[], k = 60): Map<number, 
  * Retrieve relevant context chunks for a query using Hybrid Retrieval.
  * Pipeline: dense vector (top-20) + BM25 FTS5 (top-20) → RRF → top-K with diversity filter.
  */
-export async function retrieveContext(query: string, topK: number = 5): Promise<ChunkResult[]> {
+// 두 방식으로 찾고 RRF로 합친 순위. retrieveContext와 어드민 검색 테스트가 함께 쓴다
+async function rankChunks(query: string) {
   // Load chunks and query embedding in parallel
   const [allChunks, queryEmbedding] = await Promise.all([
     getChunks(),
     getCachedEmbedding(query),
   ]);
-
-  if (allChunks.length === 0) return [];
 
   // Dense vector search (in-memory cosine similarity)
   const vectorScored = allChunks
@@ -244,6 +243,12 @@ export async function retrieveContext(query: string, topK: number = 5): Promise<
 
   // Fuse rankings with RRF
   const rrfScores = rrfFusion(vectorIds, bm25Ids);
+  return { allChunks, vectorIds, bm25Ids, rrfScores };
+}
+
+export async function retrieveContext(query: string, topK: number = 5): Promise<ChunkResult[]> {
+  const { allChunks, rrfScores } = await rankChunks(query);
+  if (allChunks.length === 0) return [];
 
   // Sort by RRF score, over-fetch for diversity filter
   const rankedIds = [...rrfScores.entries()]
@@ -276,4 +281,44 @@ export async function retrieveContext(query: string, topK: number = 5): Promise<
   }
 
   return results;
+}
+
+export interface DebugRank {
+  chunkId: number;
+  postTitle: string;
+  chunkIndex: number;
+  vectorRank: number | null;
+  bm25Rank: number | null;
+  score: number;
+  result: "used" | "same-post" | "full";
+}
+
+/**
+ * 어드민 검색 테스트 (IA_AD_00403). 모델은 부르지 않고, 합친 순위 상위 10개가
+ * 실제 답변 근거로 쓰였는지와 빠진 이유를 돌려준다. 규칙은 retrieveContext와 같다.
+ */
+export async function debugRetrieve(query: string, topK = 5): Promise<DebugRank[]> {
+  const { allChunks, vectorIds, bm25Ids, rrfScores } = await rankChunks(query);
+  const chunkMap = new Map(allChunks.map((c) => [c.id, c]));
+  const indexes = await prisma.postChunk.findMany({ where: { id: { in: [...rrfScores.keys()] } }, select: { id: true, chunkIndex: true } });
+  const indexOf = new Map(indexes.map((c) => [c.id, c.chunkIndex]));
+  const postCount: Record<string, number> = {};
+  let used = 0;
+  return [...rrfScores.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .flatMap(([id, score]) => {
+      const chunk = chunkMap.get(id);
+      if (!chunk) return [];
+      let result: DebugRank["result"] = "used";
+      if (used >= topK) result = "full";
+      else if ((postCount[chunk.postSlug] || 0) >= 2) result = "same-post";
+      else {
+        postCount[chunk.postSlug] = (postCount[chunk.postSlug] || 0) + 1;
+        used++;
+      }
+      const v = vectorIds.indexOf(id);
+      const b = bm25Ids.indexOf(id);
+      return [{ chunkId: id, postTitle: chunk.postTitle, chunkIndex: indexOf.get(id) ?? 0, vectorRank: v < 0 ? null : v + 1, bm25Rank: b < 0 ? null : b + 1, score, result }];
+    });
 }

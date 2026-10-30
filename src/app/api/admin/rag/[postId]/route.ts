@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { chunkPost, embedTexts, invalidateChunkCache } from "@/lib/rag";
+import { invalidateChunkCache } from "@/lib/rag";
+import { indexPost } from "@/lib/rag-index";
 import { NextRequest } from "next/server";
 
 type Params = { params: Promise<{ postId: string }> };
@@ -22,43 +23,17 @@ export async function GET(_req: NextRequest, { params }: Params) {
   return Response.json({ chunks });
 }
 
-// POST: Reindex a specific post
-export async function POST(_req: NextRequest, { params }: Params) {
+// POST: Reindex a specific post. body.summary가 true면 AI 요약도 다시 만든다 (전체 다시 색인)
+export async function POST(req: NextRequest, { params }: Params) {
   const session = await getSession();
   if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { postId } = await params;
-  const id = parseInt(postId);
-
+  const body = await req.json().catch(() => ({}));
   try {
-    const post = await prisma.post.findUnique({
-      where: { id },
-      select: { id: true, title: true, slug: true, category: true, content: true },
-    });
-
-    if (!post) return Response.json({ error: "Post not found" }, { status: 404 });
-
-    // Delete existing chunks for this post
-    await prisma.postChunk.deleteMany({ where: { postId: id } });
-
-    const chunks = chunkPost(post.title, post.content);
-    if (chunks.length === 0) return Response.json({ chunks: 0 });
-
-    const embeddings = await embedTexts(chunks);
-    await prisma.postChunk.createMany({
-      data: chunks.map((content, i) => ({
-        postId: post.id,
-        postTitle: post.title,
-        postSlug: post.slug,
-        postCategory: post.category,
-        content,
-        embedding: JSON.stringify(embeddings[i]),
-        chunkIndex: i,
-      })),
-    });
-
-    invalidateChunkCache();
-    return Response.json({ chunks: chunks.length });
+    const chunks = await indexPost(parseInt(postId), { summary: body.summary === true });
+    if (chunks === null) return Response.json({ error: "Post not found" }, { status: 404 });
+    return Response.json({ chunks });
   } catch (err) {
     return Response.json({ error: "Indexing failed", detail: String(err) }, { status: 500 });
   }
@@ -73,6 +48,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   const id = parseInt(postId);
 
   const { count } = await prisma.postChunk.deleteMany({ where: { postId: id } });
+  await prisma.$executeRaw`DELETE FROM PostChunkFTS WHERE chunkId NOT IN (SELECT id FROM PostChunk)`.catch(() => 0);
   invalidateChunkCache();
   return Response.json({ deleted: count });
 }
