@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
       demoVideo, demoImages, externalLinks, targetAudience, purpose, expectedEffect,
       caseBeats,
       createdAt,
+      topic,
     } = body;
 
     if (!title || !category) {
@@ -75,6 +76,7 @@ export async function POST(request: NextRequest) {
         translationKey: translationKey || null,
         coverImage: coverImage || "",
         description: description || "",
+        topic: typeof topic === "string" ? topic : "",
         ...(resolveStatus({ status: body.status, published }) ?? { status: "published", published: true }),
         buildProgress: typeof buildProgress === 'number' ? buildProgress : 0,
         relatedPosts: relatedPosts || "[]",

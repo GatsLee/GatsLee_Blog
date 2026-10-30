@@ -445,3 +445,76 @@ h1, h2, h3, h4, h5, h6 {
   -webkit-mask-image: linear-gradient(to bottom, #000 30%, rgba(0,0,0,0.1));
   mask-image: linear-gradient(to bottom, #000 30%, rgba(0,0,0,0.1));
 }
+
+/* ── 글 편집기 (IA_AD_00203). BlockNote 기본값을 블로그 본문·디자인 토큰에 맞춘다 ── */
+.post-editor .bn-container {
+  --bn-font-family: "Pretendard Variable", Pretendard, system-ui, sans-serif;
+  --bn-colors-editor-background: transparent;
+  --bn-colors-editor-text: var(--color-foreground);
+  --bn-colors-menu-background: var(--color-background);
+  --bn-colors-menu-text: var(--color-foreground);
+  --bn-colors-tooltip-background: var(--color-background);
+  --bn-colors-tooltip-text: var(--color-foreground);
+  --bn-colors-hovered-background: var(--color-surface);
+  --bn-colors-selected-background: var(--color-brand-soft);
+  --bn-colors-selected-text: var(--color-brand);
+  --bn-colors-border: var(--color-border);
+  --bn-colors-side-menu: var(--color-muted);
+  --bn-colors-shadow: rgba(24, 25, 27, 0.12);
+  --bn-border-radius: 12px;
+}
+.post-editor .bn-editor {
+  padding-inline: 0;
+  font-size: 18px;
+  line-height: 30px;
+}
+.post-editor .bn-block-content[data-content-type="heading"][data-level="1"] { font-size: 30px; line-height: 42px; }
+.post-editor .bn-block-content[data-content-type="heading"][data-level="2"] { font-size: 26px; line-height: 40px; }
+.post-editor .bn-block-content[data-content-type="heading"][data-level="3"] { font-size: 21px; line-height: 32px; }
+.post-editor .bn-suggestion-menu {
+  width: 260px;
+  max-height: 520px;
+  padding: 6px;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 12px 32px rgba(24, 25, 27, 0.12);
+}
+.post-editor .bn-suggestion-menu-label {
+  padding: 8px 8px 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-secondary);
+}
+.post-editor .bn-suggestion-menu-item {
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.post-editor .bn-suggestion-menu-item[aria-selected="true"] .bn-mt-suggestion-menu-item-title {
+  color: var(--color-brand);
+}
+.post-editor .bn-mt-suggestion-menu-item-section[data-position="left"] {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+.post-editor .bn-mt-suggestion-menu-item-section[data-position="left"] svg { width: 16px; height: 16px; color: var(--color-foreground); }
+/* 오른쪽 배지는 마크다운 단축 기호만 흐리게 보여준다 */
+.post-editor .bn-mt-suggestion-menu-item-section[data-position="right"] .mantine-Badge-root {
+  --badge-bg: transparent;
+  --badge-color: var(--color-muted);
+  background: transparent;
+  color: var(--color-muted);
+  font-family: var(--font-mono, ui-monospace), monospace;
+  font-weight: 400;
+  text-transform: none;
+  padding: 0;
+}
+.post-editor .bn-mt-suggestion-menu-item-title { font-size: 13px; font-weight: 700; }
+.post-editor .bn-mt-suggestion-menu-item-subtitle { font-size: 11px; color: var(--color-secondary); }
+.post-editor .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type="heading"]):not(:first-child) { margin-top: 24px; }
