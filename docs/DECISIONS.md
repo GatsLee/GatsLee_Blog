@@ -53,7 +53,7 @@
 - Date: 2026-10-30
 - Status: Accepted
 - Context: 디자인은 FAQ를 최대 5개로 관리하지만, DB의 FAQ 21개는 질문 매칭(tier 0~2)에도 쓰인다.
-- Decision: `FaqEntry.featured` 불리언과 `clickCount`를 추가한다. 어드민 FAQ 목록은 `featured`인 5개, 후보는 나머지다. 매칭은 지금처럼 `isActive`인 FAQ 전체를 쓴다. 챗봇 패널 추천 질문은 `featured`를 쓰고, 누르면 `clickCount`를 1 올린다.
+- Decision: `FaqEntry.featured` 불리언과 `featuredOrder`를 추가한다. 어드민 FAQ 목록은 `featured`인 5개, 후보는 나머지다. 매칭은 지금처럼 `isActive`인 FAQ 전체를 쓴다. 챗봇 패널 추천 질문은 `featured`를 쓰고, 누르면 `FaqClick`에 한 줄을 남긴다. 누적 `clickCount` 대신 클릭 기록을 남기는 이유는 AI 챗봇 화면의 주간 FAQ 클릭을 내야 하기 때문이다.
 - Rationale: 화면은 디자인대로 단순하게 두면서 답변 품질은 떨어뜨리지 않는다.
 - Consequences: (+) 기존 FAQ 21개가 계속 저장된 답을 준다. (-) 어드민의 "후보"가 실제로는 매칭에 쓰이는 FAQ라는 점을 화면 설명에 적어야 한다.
 

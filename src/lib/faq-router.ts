@@ -132,7 +132,7 @@ function detectLang(text: string): "ko" | "en" {
 }
 
 function pickAnswer(entry: FaqEntryShape, lang: "ko" | "en"): string {
-  return lang === "ko" ? entry.a_ko : entry.a_en;
+  return lang === "ko" ? entry.a_ko : entry.a_en || entry.a_ko;
 }
 
 /**

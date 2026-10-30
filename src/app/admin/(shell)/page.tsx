@@ -1,20 +1,10 @@
 import Link from "next/link";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/db";
-
-const DAY = 86_400_000;
+import { DAY, monthDot as md, parseWeek, weekRange as range } from "@/lib/week";
+import WeekNav, { Delta } from "@/components/admin/ui/WeekNav";
 
 type SearchParams = Promise<{ week?: string }>;
-
-function range(offset: number) {
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
-  end.setTime(end.getTime() + offset * 7 * DAY);
-  const start = new Date(end.getTime() - 7 * DAY + 1);
-  return { start, end };
-}
-
-const md = (d: Date) => `${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 
 async function countsFor(start: Date, end: Date) {
   const between = { gte: start, lte: end };
@@ -25,16 +15,6 @@ async function countsFor(start: Date, end: Date) {
     prisma.chatMessage.findMany({ where: { createdAt: between, role: "user" }, distinct: ["sessionId"], select: { sessionId: true } }),
   ]);
   return { views, comments, posts, chats: sessions.length };
-}
-
-function Delta({ now, before }: { now: number; before: number }) {
-  const d = now - before;
-  if (d === 0) return null;
-  return (
-    <span className={`rounded-full px-[7px] py-[3px] text-[11px] font-bold ${d > 0 ? "bg-brand-soft text-brand" : "bg-[#eef0f3] text-secondary"}`}>
-      {d > 0 ? `+${d}` : `−${-d}`}
-    </span>
-  );
 }
 
 // 조회 추이: 7일 영역 그래프
@@ -66,7 +46,7 @@ function ViewsChart({ days }: { days: { label: string; value: number }[] }) {
 
 // IA_AD_001 대시보드. 있는 데이터만 보여준다 (D8)
 export default async function DashboardPage({ searchParams }: { searchParams: SearchParams }) {
-  const offset = Math.min(0, parseInt((await searchParams).week ?? "0") || 0);
+  const offset = parseWeek((await searchParams).week);
   const now = range(offset);
   const prev = range(offset - 1);
 
@@ -117,21 +97,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold leading-8 text-foreground">대시보드</h1>
-        <div className="flex items-center gap-2 text-[13px] font-bold text-foreground">
-          <Link href={`/admin?week=${offset - 1}`} aria-label="이전 주" className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-background">
-            <ChevronLeft size={16} />
-          </Link>
-          {md(now.start)} – {md(now.end)}
-          {offset < 0 ? (
-            <Link href={`/admin?week=${offset + 1}`} aria-label="다음 주" className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-background">
-              <ChevronRight size={16} />
-            </Link>
-          ) : (
-            <span className="flex h-8 w-8 items-center justify-center text-muted">
-              <ChevronRight size={16} />
-            </span>
-          )}
-        </div>
+        <WeekNav basePath="/admin" offset={offset} start={now.start} end={now.end} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

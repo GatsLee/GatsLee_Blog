@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/auth";
 import { getResumePdfs } from "@/lib/resume";
+import { isChatVisible } from "@/lib/chat-settings";
 import { prisma } from "@/lib/db";
 import ClientLayout from "@/components/layout/ClientLayout";
 import "./globals.css";
@@ -56,6 +57,7 @@ export default async function RootLayout({
     .catch(() => []);
   // 헤더 이력서 버튼은 올린 한국어 PDF를 바로 연다 (D4)
   const resumeUrl = (await getResumePdfs()).ko?.url ?? "/resume";
+  const chatVisible = await isChatVisible();
 
   return (
     <html lang="ko" suppressHydrationWarning>
@@ -104,7 +106,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             style={{ display: "none", visibility: "hidden" }}
           />
         </noscript>
-        <ClientLayout isAdmin={isAdmin} footerProjects={footerProjects} resumeUrl={resumeUrl}>
+        <ClientLayout isAdmin={isAdmin} footerProjects={footerProjects} resumeUrl={resumeUrl} chatVisible={chatVisible}>
           {children}
         </ClientLayout>
       </body>

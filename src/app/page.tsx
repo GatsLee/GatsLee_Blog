@@ -12,9 +12,11 @@ import UploadStreak from "@/components/common/UploadStreak";
 import SectionHead from "@/components/home/SectionHead";
 import ProjectCard from "@/components/home/ProjectCard";
 import AskGatsButton from "@/components/home/AskGatsButton";
+import { isChatVisible } from "@/lib/chat-settings";
 
 // IA_HM_001 홈. DB가 비었거나 실패하면 블록을 숨긴다 (IA_HM_00101)
 export default async function Home() {
+  const chatVisible = await isChatVisible();
   const [projects, posts, streak] = await Promise.all([
     prisma.product
       .findMany({
@@ -136,8 +138,12 @@ export default async function Home() {
               </li>
             ))}
           </ul>
-          <p className="mt-4 text-[13px] leading-[22px] text-foreground">어떤 글부터 볼지 모르겠다면</p>
-          <AskGatsButton />
+          {chatVisible && (
+            <>
+              <p className="mt-4 text-[13px] leading-[22px] text-foreground">어떤 글부터 볼지 모르겠다면</p>
+              <AskGatsButton />
+            </>
+          )}
         </aside>
       </section>
 

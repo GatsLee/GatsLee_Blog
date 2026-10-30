@@ -12,7 +12,7 @@ function openChat() {
   window.dispatchEvent(new Event("gats:open-chat"));
 }
 
-export default function Footer({ projects }: { projects: FooterProject[] }) {
+export default function Footer({ projects, resumeUrl, chatVisible }: { projects: FooterProject[]; resumeUrl: string; chatVisible: boolean }) {
   return (
     <footer className="w-full">
       <div className="checker-boundary" aria-hidden />
@@ -54,16 +54,18 @@ export default function Footer({ projects }: { projects: FooterProject[] }) {
                   글 전체 보기
                 </Link>
                 <a
-                  href="/resume"
+                  href={resumeUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1 text-[15px] text-foreground hover:text-brand"
                 >
                   이력서 <ArrowUpRight size={14} className="text-brand" />
                 </a>
-                <button type="button" onClick={openChat} className="text-left text-[15px] text-foreground hover:text-brand">
-                  AI에게 질문하기
-                </button>
+                {chatVisible && (
+                  <button type="button" onClick={openChat} className="text-left text-[15px] text-foreground hover:text-brand">
+                    AI에게 질문하기
+                  </button>
+                )}
               </div>
             </div>
           </div>

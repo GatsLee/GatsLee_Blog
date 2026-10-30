@@ -17,11 +17,13 @@ export default function ClientLayout({
   isAdmin,
   footerProjects,
   resumeUrl,
+  chatVisible,
 }: {
   children: React.ReactNode;
   isAdmin: boolean;
   footerProjects: FooterProject[];
   resumeUrl: string;
+  chatVisible: boolean;
 }) {
   const pathname = usePathname() ?? "";
   const isAdminArea = ADMIN_PREFIXES.some((p) => pathname.startsWith(p));
@@ -39,8 +41,8 @@ export default function ClientLayout({
             <PageViewTracker />
             <TopNav isAdmin={isAdmin} resumeUrl={resumeUrl} />
             <main className="flex-1">{children}</main>
-            <Footer projects={footerProjects} />
-            {!isResumePage && <ChatWidget initialMessage="" defaultOpen={false} />}
+            <Footer projects={footerProjects} resumeUrl={resumeUrl} chatVisible={chatVisible} />
+            {!isResumePage && chatVisible && <ChatWidget initialMessage="" defaultOpen={false} />}
           </div>
         )}
       </LanguageProvider>

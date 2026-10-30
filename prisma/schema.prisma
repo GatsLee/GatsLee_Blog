@@ -175,19 +175,33 @@ model SiteConfig {
 }
 
 model FaqEntry {
-  id                    Int      @id @default(autoincrement())
-  slug                  String   @unique // stable identifier (e.g. "intro_who")
+  id                    Int        @id @default(autoincrement())
+  slug                  String     @unique // stable identifier (e.g. "intro_who")
   qVariants             String // JSON array of question variants
   a_ko                  String
   a_en                  String
-  tags                  String   @default("[]") // JSON array
-  isActive              Boolean  @default(true)
-  source                String   @default("manual") // "manual" | "promoted" | "seed"
+  tags                  String     @default("[]") // JSON array
+  isActive              Boolean    @default(true)
+  source                String     @default("manual") // "manual" | "promoted" | "seed"
   promotedFromMessageId Int? // ChatMessage.id this FAQ was promoted from
-  upvotes               Int      @default(0)
-  downvotes             Int      @default(0)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  upvotes               Int        @default(0)
+  downvotes             Int        @default(0)
+  featured              Boolean    @default(false) // 챗봇 추천 질문 5개 (D7)
+  featuredOrder         Int        @default(0)
+  clicks                FaqClick[]
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
 
   @@index([isActive])
+}
+
+// 추천 질문 클릭 기록. 주간 FAQ 클릭 수를 낸다 (IA_AD_004)
+model FaqClick {
+  id        Int      @id @default(autoincrement())
+  faqId     Int
+  faq       FaqEntry @relation(fields: [faqId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([faqId])
+  @@index([createdAt])
 }

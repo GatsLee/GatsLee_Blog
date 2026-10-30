@@ -34,16 +34,15 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { slug, qVariants, a_ko, a_en, tags, source, promotedFromMessageId } = body;
-
-    if (!slug || typeof slug !== "string") {
-      return Response.json({ error: "slug required" }, { status: 400 });
-    }
+    const { qVariants, a_ko, tags, source, promotedFromMessageId } = body;
+    // 어드민 후보 추가(IA_AD_0040101)는 slug·영문 답을 비워 보낼 수 있다
+    const slug = typeof body.slug === "string" && body.slug.trim() ? body.slug.trim() : `faq-${Date.now()}`;
+    const a_en = typeof body.a_en === "string" ? body.a_en : "";
     if (!Array.isArray(qVariants) || qVariants.length === 0 || qVariants.some((q) => typeof q !== "string" || !q.trim())) {
       return Response.json({ error: "qVariants must be a non-empty string array" }, { status: 400 });
     }
-    if (!a_ko || !a_en) {
-      return Response.json({ error: "a_ko and a_en required" }, { status: 400 });
+    if (!a_ko) {
+      return Response.json({ error: "a_ko required" }, { status: 400 });
     }
 
     const created = await prisma.faqEntry.create({
