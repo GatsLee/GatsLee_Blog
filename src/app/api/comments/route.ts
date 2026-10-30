@@ -6,6 +6,15 @@ import { getSession } from "@/lib/auth";
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const postId = searchParams.get("postId");
+  const productId = searchParams.get("productId");
+
+  if (productId) {
+    const comments = await prisma.comment.findMany({
+      where: { productId: parseInt(productId) },
+      orderBy: { createdAt: "asc" },
+    });
+    return NextResponse.json(comments);
+  }
 
   if (!postId) {
     // postId 없이 전체 댓글을 보는 건 어드민만
@@ -34,11 +43,12 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const postId = body.postId;
+  const postId = body.postId ? parseInt(body.postId) : null;
+  const productId = body.productId ? parseInt(body.productId) : null;
   const author = typeof body.author === "string" ? body.author.trim() : "";
   const content = typeof body.content === "string" ? body.content.trim() : "";
 
-  if (!postId || !author || !content || author.length > 40 || content.length > 2000) {
+  if ((!postId && !productId) || !author || !content || author.length > 40 || content.length > 2000) {
     return NextResponse.json(
       { error: "Missing required fields" },
       { status: 400 }
@@ -47,7 +57,7 @@ export async function POST(request: NextRequest) {
 
   const comment = await prisma.comment.create({
     data: {
-      postId: parseInt(postId),
+      ...(postId ? { postId } : { productId }),
       author,
       content,
     },

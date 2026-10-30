@@ -39,7 +39,8 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  posts Post[]
+  posts    Post[]
+  comments Comment[]
 
   @@index([published, sortOrder])
 }
@@ -108,11 +109,17 @@ model PageView {
 
 model Comment {
   id        Int      @id @default(autoincrement())
-  postId    Int
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  // 글 댓글이면 postId, 프로젝트 댓글이면 productId (IA_PD_00202)
+  postId    Int?
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  productId Int?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
   author    String
   content   String
   createdAt DateTime @default(now())
+
+  @@index([postId])
+  @@index([productId])
 }
 
 model AdminUser {

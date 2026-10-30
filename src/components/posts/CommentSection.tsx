@@ -13,8 +13,19 @@ interface Comment {
 // 글쓴이가 단 댓글에 붙는 표시
 const AUTHOR_NAMES = ["이준열", "Gats Lee", "gatslee"];
 
-// IA_PS_002 댓글 0 · IA_PS_00201 댓글 있음 · IA_PS_00202 등록 오류
-export default function CommentSection({ postId }: { postId: number }) {
+// IA_PS_002 댓글 0 · IA_PS_00201 댓글 있음 · IA_PS_00202 등록 오류 · IA_PD_00202 프로젝트 댓글
+export default function CommentSection({
+  postId,
+  productId,
+  hideHeading = false,
+}: {
+  postId?: number;
+  productId?: number;
+  // 접이식 상자 안에서는 상자 머리가 제목 역할을 한다
+  hideHeading?: boolean;
+}) {
+  const target = postId ? { postId } : { productId };
+  const query = postId ? `postId=${postId}` : `productId=${productId}`;
   const [comments, setComments] = useState<Comment[]>([]);
   const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
@@ -22,11 +33,11 @@ export default function CommentSection({ postId }: { postId: number }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch(`/api/comments?postId=${postId}`)
+    fetch(`/api/comments?${query}`)
       .then((r) => r.json())
       .then(setComments)
       .catch(() => {});
-  }, [postId]);
+  }, [query]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +49,7 @@ export default function CommentSection({ postId }: { postId: number }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          postId,
+          ...target,
           author: author.trim() || `guest_${Math.floor(Math.random() * 89) + 10}`,
           content,
         }),
@@ -61,7 +72,7 @@ export default function CommentSection({ postId }: { postId: number }) {
 
   return (
     <section className="print:hidden">
-      <h2 className="text-[26px] font-bold leading-[38px] text-foreground">댓글 {comments.length}</h2>
+      {!hideHeading && <h2 className="text-[26px] font-bold leading-[38px] text-foreground">댓글 {comments.length}</h2>}
       <p className="mt-1 text-base leading-[26px] text-secondary">궁금한 점이나 다른 경험이 있다면 남겨주세요.</p>
 
       {comments.length > 0 && (
