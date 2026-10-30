@@ -5,6 +5,7 @@ const OLLAMA_URL = process.env.OLLAMA_URL || "http://host.docker.internal:11434"
 const EMBED_MODEL = process.env.EMBED_MODEL || "bge-m3";
 
 export interface ChunkResult {
+  id: number; // PostChunk.id, 답변 근거 기록용
   postTitle: string;
   postSlug: string;
   postCategory: string;
@@ -264,6 +265,7 @@ export async function retrieveContext(query: string, topK: number = 5): Promise<
     if (count >= 2) continue;
     postCount[chunk.postSlug] = count + 1;
     results.push({
+      id,
       postTitle: chunk.postTitle,
       postSlug: chunk.postSlug,
       postCategory: chunk.postCategory,

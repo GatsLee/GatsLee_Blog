@@ -113,7 +113,8 @@ function streamStaticAnswer(
   sessionId: string | undefined,
   message: string,
   ip: string,
-  meta?: { tier: 0 | 1; similarity: number; faqSlug: string }
+  meta?: { tier: 0 | 1; similarity: number; faqSlug: string },
+  startedAt: number = Date.now()
 ): Response {
   const words = answer.split(/(\s+)/);
   let idx = 0;
@@ -144,7 +145,8 @@ function streamStaticAnswer(
             await prisma.chatMessage.createMany({
               data: [
                 { sessionId, role: "user", content: message, ip },
-                { sessionId, role: "assistant", content: answer, ip },
+                // 어드민 대화 상세(IA_AD_00402)가 답변 경로와 시간을 보여준다
+                { sessionId, role: "assistant", content: answer, ip, tier: String(meta?.tier ?? 1), ttftMs: 0, totalMs: Date.now() - startedAt },
               ],
             });
           } catch {
@@ -194,9 +196,11 @@ function streamFaqAssistedGeneration(
   userMessage: string,
   sessionId: string | undefined,
   ip: string,
-  history: Array<{ role: string; content: string }>
+  history: Array<{ role: string; content: string }>,
+  startedAt: number = Date.now()
 ): Response {
   const abortController = new AbortController();
+  let ttftMs: number | null = null;
   const systemPrompt = buildFaqAssistedPrompt(faq);
 
   const messages = [
@@ -261,6 +265,7 @@ function streamFaqAssistedGeneration(
               if (json.message?.content) {
                 const filtered = json.message.content.replace(CJK_REGEX, "");
                 if (!filtered) continue;
+                if (ttftMs === null) ttftMs = Date.now() - startedAt;
                 fullResponse += filtered;
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: filtered })}\n\n`));
               }
@@ -270,7 +275,7 @@ function streamFaqAssistedGeneration(
                     await prisma.chatMessage.createMany({
                       data: [
                         { sessionId, role: "user", content: userMessage, ip },
-                        { sessionId, role: "assistant", content: fullResponse, ip },
+                        { sessionId, role: "assistant", content: fullResponse, ip, tier: "2", ttftMs, totalMs: Date.now() - startedAt },
                       ],
                     });
                   } catch {
@@ -308,6 +313,7 @@ function streamFaqAssistedGeneration(
 }
 
 export async function POST(request: Request) {
+  const startedAt = Date.now();
   // Guard: reject if GPU is already saturated
   if (activeRequests >= MAX_CONCURRENT) {
     return Response.json({ error: "Server busy" }, { status: 503 });
@@ -347,11 +353,11 @@ export async function POST(request: Request) {
           tier: faqMatch.similarity >= 1.0 ? 0 : 1,
           similarity: faqMatch.similarity,
           faqSlug: faqMatch.entry.slug,
-        });
+        }, startedAt);
       }
       if (faqMatch?.tier === 2) {
         // FAQ-assisted LLM synthesis (no RAG retrieval)
-        return streamFaqAssistedGeneration(faqMatch, trimmedMessage, sessionId, ip, trimmedHistory);
+        return streamFaqAssistedGeneration(faqMatch, trimmedMessage, sessionId, ip, trimmedHistory, startedAt);
       }
     } catch {
       // FAQ routing failed — fall through to Tier 3 (RAG)
@@ -419,6 +425,7 @@ export async function POST(request: Request) {
     const encoder = new TextEncoder();
     let fullResponse = "";
     let thinkContent = "";
+    let ttftMs: number | null = null;
 
     let metaEmittedRag = false;
     const stream = new ReadableStream({
@@ -456,6 +463,7 @@ export async function POST(request: Request) {
               if (json.message?.content) {
                 const filtered = json.message.content.replace(CJK_REGEX, "");
                 if (!filtered) continue;
+                if (ttftMs === null) ttftMs = Date.now() - startedAt;
                 fullResponse += filtered;
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: filtered })}\n\n`));
               }
@@ -467,7 +475,16 @@ export async function POST(request: Request) {
                     await prisma.chatMessage.createMany({
                       data: [
                         { sessionId, role: "user", content: trimmedMessage, ip },
-                        { sessionId, role: "assistant", content: fullResponse, ip },
+                        {
+                          sessionId,
+                          role: "assistant",
+                          content: fullResponse,
+                          ip,
+                          tier: "3",
+                          chunkIds: JSON.stringify(retrievedChunks.map((c) => c.id)),
+                          ttftMs,
+                          totalMs: Date.now() - startedAt,
+                        },
                       ],
                     });
                   } catch {

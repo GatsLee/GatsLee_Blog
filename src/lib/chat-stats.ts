@@ -64,3 +64,14 @@ export function qVariants(raw: string): string[] {
     return [];
   }
 }
+
+// 답변 경로 라벨 (docs/ia.md "AI 챗봇 답변 경로 표기")
+export const TIER_LABEL: Record<string, { label: string; tone: string }> = {
+  "0": { label: "FAQ 그대로", tone: "bg-[#e6f7ee] text-success" },
+  "1": { label: "FAQ 유사", tone: "bg-[#e6f7ee] text-success" },
+  "2": { label: "FAQ 참고 생성", tone: "bg-brand-soft text-brand" },
+  "3": { label: "검색 후 생성", tone: "bg-[#fff4e5] text-warning" },
+};
+
+export const FAQ_TIERS = ["0", "1"];
+export const GEN_TIERS = ["2", "3"];

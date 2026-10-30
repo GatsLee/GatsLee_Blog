@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { TOPICS, isTopic, topicLabel } from "@/lib/topics";
@@ -9,6 +9,7 @@ import TopicIcon from "@/components/common/TopicIcon";
 import StatusBadge from "@/components/admin/ui/StatusBadge";
 import FilterSelect from "@/components/admin/posts/FilterSelect";
 import RowMenu from "@/components/admin/posts/RowMenu";
+import AdminPager from "@/components/admin/ui/AdminPager";
 
 export const metadata = { title: "글 관리" };
 
@@ -186,42 +187,10 @@ export default async function AdminPostsPage({ searchParams }: { searchParams: S
           <span className="text-xs text-secondary">
             {total > 0 ? `${total}개 중 ${(page - 1) * PER_PAGE + 1}–${Math.min(total, page * PER_PAGE)}` : "0개"}
           </span>
-          {totalPages > 1 && (
-            <nav aria-label="페이지" className="flex items-center gap-1.5">
-              <PageLink href={page > 1 ? href({ page: page - 1 }) : undefined} label="이전 페이지">
-                <ChevronLeft size={16} />
-              </PageLink>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) =>
-                n === page ? (
-                  <span key={n} aria-current="page" className="flex h-8 min-w-8 items-center justify-center rounded-lg bg-brand text-[13px] font-bold text-white">
-                    {n}
-                  </span>
-                ) : (
-                  <Link key={n} href={href({ page: n })} className="flex h-8 min-w-8 items-center justify-center rounded-lg text-[13px] text-foreground hover:bg-surface">
-                    {n}
-                  </Link>
-                )
-              )}
-              <PageLink href={page < totalPages ? href({ page: page + 1 }) : undefined} label="다음 페이지">
-                <ChevronRight size={16} />
-              </PageLink>
-            </nav>
-          )}
+          <AdminPager page={page} totalPages={totalPages} hrefFor={(n) => href({ page: n })} />
         </div>
       </div>
     </div>
   );
 }
 
-function PageLink({ href, label, children }: { href?: string; label: string; children: React.ReactNode }) {
-  const cls = "flex h-8 w-8 items-center justify-center rounded-lg border border-border";
-  return href ? (
-    <Link href={href} aria-label={label} className={`${cls} text-foreground hover:bg-surface`}>
-      {children}
-    </Link>
-  ) : (
-    <span aria-hidden className={`${cls} text-muted`}>
-      {children}
-    </span>
-  );
-}
