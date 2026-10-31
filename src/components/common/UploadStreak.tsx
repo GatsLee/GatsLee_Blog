@@ -50,7 +50,7 @@ export default function UploadStreak({ data }: { data: StreakData }) {
           </div>
           <div className="flex" style={{ gap: GAP }}>
             {data.weeks.map((week, w) => (
-              <div key={w} className="flex flex-col" style={{ gap: GAP }}>
+              <div key={w} className="streak-col flex flex-col" style={{ gap: GAP, "--i": w } as React.CSSProperties}>
                 {week.map((n, d) => (
                   <StreakCell key={d} n={n} size={CELL} />
                 ))}
@@ -60,7 +60,7 @@ export default function UploadStreak({ data }: { data: StreakData }) {
         </div>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-[13px] font-medium text-foreground">
-            최근 1년 · 글 {data.posts}편 · 프로젝트 {data.projects}개 · 가장 긴 연속 기록 {data.longest}일
+            최근 1년 · 포스트 {data.posts}편 · 프로젝트 {data.projects}개 · 가장 긴 연속 기록 {data.longest}일
           </p>
           <StreakLegend />
         </div>

@@ -11,18 +11,22 @@ export default function ProjectCard({
   type,
   headline,
   detail,
+  revealDelay,
 }: {
   slug: string;
   name: string;
   type: ProductType;
   headline: string;
   detail: string;
+  revealDelay?: number;
 }) {
   const Icon = TYPE_ICON[type];
   return (
     <Link
       href={`/products/${slug}`}
-      className="group flex flex-col gap-3 rounded-xl border border-border bg-background p-6 transition-shadow hover:shadow-[0_8px_24px_rgba(49,92,244,0.12)]"
+      data-reveal={revealDelay !== undefined ? "" : undefined}
+      style={revealDelay !== undefined ? ({ "--d": `${revealDelay}ms` } as React.CSSProperties) : undefined}
+      className="lift-card group flex flex-col gap-3 rounded-xl border border-border bg-background p-6"
     >
       <span className="flex items-center gap-3">
         <Icon size={24} strokeWidth={1.8} className="text-brand" />
@@ -31,7 +35,7 @@ export default function ProjectCard({
       <span className="line-clamp-2 text-lg font-medium leading-7 text-foreground">{headline}</span>
       {detail && <span className="line-clamp-2 text-sm leading-6 text-secondary">{detail}</span>}
       <span className="mt-auto inline-flex items-center gap-2 pt-2 text-[13px] text-brand">
-        프로젝트 살펴보기 <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+        프로젝트 살펴보기 <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
       </span>
     </Link>
   );

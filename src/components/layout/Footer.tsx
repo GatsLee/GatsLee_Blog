@@ -20,7 +20,7 @@ export default function Footer({ projects, resumeUrl, chatVisible }: { projects:
         <div className="mx-auto flex max-w-[1184px] flex-col gap-4 px-6 pb-10 pt-4">
           <div className="flex flex-col gap-12 md:flex-row md:items-center md:gap-20">
             <div className="md:w-[440px]">
-              <Image src="/images/avatar.png" alt="" width={125} height={125} className="-ml-2" />
+              <Image src="/images/avatar-v2.png" alt="" width={125} height={125} className="-ml-2" quality={90} />
               <p className="mt-1 text-[32px] font-bold leading-tight text-foreground">Gats Blog</p>
               <p className="mt-3 text-[15px] text-foreground">사용자의 관점에서 서비스를 기획하는 이준열입니다.</p>
             </div>
@@ -51,7 +51,7 @@ export default function Footer({ projects, resumeUrl, chatVisible }: { projects:
               <div className="flex flex-col gap-[18px]">
                 <p className="mono-label">More</p>
                 <Link href="/insights" className="text-[15px] text-foreground hover:text-brand">
-                  글 전체 보기
+                  포스트 전체 보기
                 </Link>
                 <a
                   href={resumeUrl}

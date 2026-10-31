@@ -422,8 +422,8 @@ h1, h2, h3, h4, h5, h6 {
 .article-body .max-w-prose { max-width: none; }
 .article-body p, .article-body li { font-size: 18px; line-height: 30px; }
 .article-body p { margin: 0 0 20px; }
-.article-body h1, .article-body h2 { font-size: 26px; line-height: 40px; font-weight: 700; margin: 44px 0 20px; scroll-margin-top: 120px; }
-.article-body h3 { font-size: 21px; line-height: 32px; font-weight: 700; margin: 32px 0 16px; scroll-margin-top: 120px; }
+.article-body h1, .article-body h2 { font-size: 26px; line-height: 40px; font-weight: 700; margin: 44px 0 20px; scroll-margin-top: 84px; }
+.article-body h3 { font-size: 21px; line-height: 32px; font-weight: 700; margin: 32px 0 16px; scroll-margin-top: 84px; }
 .article-body > div > :first-child { margin-top: 0; }
 .article-body blockquote { border-left: 3px solid var(--color-brand); padding: 4px 0 4px 20px; font-style: normal; font-weight: 700; font-size: 21px; line-height: 32px; color: var(--color-foreground); }
 .article-body sup a { color: var(--color-brand); text-decoration: none; font-size: 0.7em; }
@@ -518,3 +518,47 @@ h1, h2, h3, h4, h5, h6 {
 .post-editor .bn-mt-suggestion-menu-item-title { font-size: 13px; font-weight: 700; }
 .post-editor .bn-mt-suggestion-menu-item-subtitle { font-size: 11px; color: var(--color-secondary); }
 .post-editor .bn-block-outer:has(> .bn-block > .bn-block-content[data-content-type="heading"]):not(:first-child) { margin-top: 24px; }
+
+/* 헤더 glass (IA_HM_001 섹션_헤더). 위·아래 가장자리로 갈수록 불투명하고 가운데는 뒤가 비친다 */
+.header-glass {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-surface) 92%, transparent),
+    color-mix(in srgb, var(--color-surface) 45%, transparent) 50%,
+    color-mix(in srgb, var(--color-surface) 92%, transparent)
+  );
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  backdrop-filter: blur(12px) saturate(1.4);
+}
+
+/* 홈 애니메이션 (IA_HM_001). 처음 한 번만, 짧고 부드럽게 움직인다 */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes gentle-float {
+  from { transform: translateY(0); }
+  to { transform: translateY(-8px); }
+}
+/* 히어로: 페이지를 열면 라벨 → 명제 → 캐릭터 → 소개 순서로 떠오른다 */
+.motion-rise { animation: rise-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms) both; }
+.hero-float { animation: gentle-float 4.5s ease-in-out 1s infinite alternate; }
+/* 스크롤: data-reveal 요소는 화면에 들어올 때 올라오며 나타난다 (RevealOnScroll) */
+[data-reveal] {
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms);
+}
+.reveal-ready [data-reveal]:not(.is-revealed) { opacity: 0; transform: translateY(20px); }
+/* 잔디는 왼쪽 주부터 차오른다 */
+.streak-col { transition: opacity 0.5s ease var(--sd, 0ms), transform 0.5s ease var(--sd, 0ms); --sd: calc(var(--i, 0) * 10ms + 150ms); }
+.reveal-ready [data-reveal]:not(.is-revealed) .streak-col { opacity: 0; transform: scale(0.85); }
+/* 카드는 마우스를 올리면 살짝 떠오른다 */
+.lift-card {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1) var(--d, 0ms);
+}
+.lift-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(49, 92, 244, 0.14); }
+.reveal-ready .lift-card[data-reveal]:not(.is-revealed) { opacity: 0; transform: translateY(20px); }
+@media (prefers-reduced-motion: reduce) {
+  .motion-rise, .hero-float { animation: none; }
+  [data-reveal], .streak-col, .lift-card { transition: none; }
+  .lift-card:hover { transform: none; }
+}

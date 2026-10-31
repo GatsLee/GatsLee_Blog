@@ -43,7 +43,7 @@ function linkIcon(link: ProductLink) {
 
 function SectionTitle({ id, children }: { id: string; children: React.ReactNode }) {
   return (
-    <h2 id={id} className="scroll-mt-32 text-[28px] font-bold leading-[42px] text-foreground">
+    <h2 id={id} className="scroll-mt-24 text-[28px] font-bold leading-[42px] text-foreground">
       {children}
     </h2>
   );
@@ -145,7 +145,7 @@ export default async function ProductDetailPage({ params }: { params: Params }) 
 
       <div className="flex gap-12">
         {toc.length > 1 && (
-          <nav aria-label="목차" className="sticky top-32 hidden w-[176px] shrink-0 flex-col gap-5 self-start xl:flex">
+          <nav aria-label="목차" className="sticky top-24 hidden w-[176px] shrink-0 flex-col gap-5 self-start xl:flex">
             <p className="text-sm font-bold text-foreground">목차</p>
             {toc.map((t) => (
               <a key={t.id} href={`#${t.id}`} className="text-sm text-secondary hover:text-brand">

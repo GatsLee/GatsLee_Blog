@@ -4,13 +4,22 @@ import { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ChevronDown, FileText, Menu, Moon, Rss, Search, Settings, Sun, X } from "lucide-react";
+import { FileText, Menu, Moon, Rss, Search, Settings, Sun, X } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { TOPICS } from "@/lib/topics";
 import TopicIcon from "@/components/common/TopicIcon";
 import SearchOverlay from "@/components/common/SearchOverlay";
 
-// 관심 주제 · 프로젝트 · 일상 · 소개. 관심 주제는 드롭다운으로 연다.
+// 드롭다운 표시. 꼭짓점을 둥글게 다듬은 채운 삼각형 (Figma HM/아이콘/삼각형)
+function Caret({ open }: { open: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden className={`text-brand transition-transform ${open ? "rotate-180" : ""}`}>
+      <path d="M4.5 6h7L8 10.5z" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// 포스트 · 프로젝트 · 일상 · 소개. 포스트는 주제 드롭다운으로 연다.
 const NAV_ITEMS = [
   { href: "/products", label: "프로젝트" },
   { href: "/daily", label: "일상" },
@@ -114,8 +123,8 @@ export default function TopNav({ isAdmin, resumeUrl }: { isAdmin: boolean; resum
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-surface">
-        <div className="mx-auto flex h-24 max-w-[1184px] items-center justify-between px-6">
+      <header className="header-glass sticky top-0 z-50 w-full border-b border-border">
+        <div className="mx-auto flex h-[60px] max-w-[1184px] items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-3 text-lg font-bold text-foreground">
             <Image src={pawnSrc} alt="" width={22} height={22} className="object-contain" />
             <span>Gats Blog</span>
@@ -131,8 +140,8 @@ export default function TopNav({ isAdmin, resumeUrl }: { isAdmin: boolean; resum
                   topicsActive ? "font-semibold text-brand" : "text-foreground"
                 }`}
               >
-                관심 주제
-                <ChevronDown size={16} className={`transition-transform ${topicsOpen ? "rotate-180" : ""}`} />
+                포스트
+                <Caret open={topicsOpen} />
               </button>
               {topicsOpen && (
                 <div className="absolute left-1/2 top-full mt-4 w-[360px] -translate-x-1/2 rounded-2xl border border-border bg-background p-2 shadow-[0_12px_32px_rgba(24,25,27,0.12)]">
@@ -211,9 +220,9 @@ export default function TopNav({ isAdmin, resumeUrl }: { isAdmin: boolean; resum
       </header>
 
       {mobileOpen && (
-        <div className="fixed inset-0 top-24 z-40 flex flex-col gap-6 bg-background px-6 py-8 md:hidden">
+        <div className="fixed inset-0 top-[61px] z-40 flex flex-col gap-6 bg-background px-6 py-8 md:hidden">
           <Link href="/insights" className="text-2xl font-bold text-foreground">
-            글
+            포스트
           </Link>
           {NAV_ITEMS.map((item) => (
             <Link key={item.href} href={item.href} className="text-2xl font-bold text-foreground">

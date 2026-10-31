@@ -139,7 +139,7 @@ export default function SearchOverlay({ open, onClose }: { open: boolean; onClos
           {hasQuery && !loading && flat.length === 0 && (
             <div className="px-3 py-10 text-center">
               <p className="text-base font-bold text-foreground">‘{query.trim()}’과 맞는 결과가 없어요</p>
-              <p className="mt-1 text-sm text-secondary">다른 단어로 찾거나 관심 주제에서 둘러보세요.</p>
+              <p className="mt-1 text-sm text-secondary">다른 단어로 찾거나 포스트 주제별로 둘러보세요.</p>
             </div>
           )}
           {groups.map((g) => (

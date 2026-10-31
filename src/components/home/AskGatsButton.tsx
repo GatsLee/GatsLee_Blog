@@ -8,9 +8,9 @@ export default function AskGatsButton() {
     <button
       type="button"
       onClick={() => window.dispatchEvent(new Event("gats:open-chat"))}
-      className="inline-flex items-center gap-2 text-[13px] text-brand hover:underline"
+      className="group inline-flex items-center gap-2 text-[13px] text-brand hover:underline"
     >
-      ASK GATS에 질문하기 <ArrowRight size={16} />
+      ASK GATS에 질문하기 <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
     </button>
   );
 }
