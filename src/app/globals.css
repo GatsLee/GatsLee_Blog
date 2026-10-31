@@ -366,15 +366,15 @@ h1, h2, h3, h4, h5, h6 {
     display: none !important;
   }
 
+  /* Jake's Resume 여백 0.5in. 화면용 종이 여백·그림자는 인쇄에서 뺀다 */
   @page {
     size: A4;
-    margin: 14mm 15mm;
+    margin: 0.5in;
   }
 
   .resume-doc {
-    font-size: 10.5pt;
-    line-height: 1.45;
-    max-width: none;
+    padding: 0 !important;
+    box-shadow: none !important;
   }
 
   /* Never split a section across a page boundary. */
@@ -384,16 +384,9 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .resume-doc a {
-    text-decoration: none;
     color: #000;
   }
 
-  /* Links can't be clicked on paper — print the destination. */
-  .resume-doc a[data-print-url]::after {
-    content: " (" attr(href) ")";
-    font-size: 8.5pt;
-    color: #555;
-  }
 }
 
 /* ─────────── 체스 에디토리얼 공통 ─────────── */

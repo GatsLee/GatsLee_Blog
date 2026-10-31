@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getResumePdfs } from "@/lib/resume";
-import { defaultResume, type ResumeData } from "@/data/resume";
+import { defaultResume, isResumeData, type ResumeData } from "@/data/resume";
 import ResumeDoc from "./ResumeDoc";
 
 // 올린 PDF 여부를 요청마다 확인한다
@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "이력서 | Gats Lee",
-  description: "문제를 숫자로 정의하고 시스템으로 해결하는 Technical PM — 이준열 이력서.",
+  description: "이준열 이력서. 소프티어 서비스 기획 과정, 42서울, 직접 만들고 운영한 프로젝트.",
 };
 
 async function load(locale: string): Promise<ResumeData> {
@@ -18,7 +18,9 @@ async function load(locale: string): Promise<ResumeData> {
     const config = await prisma.siteConfig.findUnique({
       where: { key: `resume_${locale}` },
     });
-    if (config) return JSON.parse(config.value) as ResumeData;
+    // 예전 형식으로 저장된 값은 Jake's Resume 형식으로 읽을 수 없어 기본값을 쓴다
+    const saved: unknown = config ? JSON.parse(config.value) : null;
+    if (isResumeData(saved)) return saved;
   } catch {
     /* fall through to the checked-in default */
   }

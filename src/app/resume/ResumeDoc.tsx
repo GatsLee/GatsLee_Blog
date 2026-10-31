@@ -1,217 +1,163 @@
 "use client";
 
-import Link from "next/link";
-import { Printer, ArrowUpRight } from "lucide-react";
+import { Printer } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
-import type { ResumeData } from "@/data/resume";
+import type { ResumeData, ResumeEntry } from "@/data/resume";
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+// Jake's Resume(github.com/jakegut/resume) 형식. 섹션은 프로젝트 → 경력 → 교육 → 기술 순서. 11pt 본문, 0.5in 여백, 작은 대문자 섹션 제목 + 아래 실선,
+// 항목은 두 줄(굵게 기관 · 기간 / 기울임 과정 · 장소) 뒤에 글머리 목록.
+// 영어는 Times New Roman, 한국어는 Pretendard로 쓴다
+const FONT = {
+  en: '"Times New Roman", Times, "Liberation Serif", serif',
+  ko: '"Pretendard", "Pretendard Variable", -apple-system, sans-serif',
+};
+
+function Section({ title, isKo, children }: { title: string; isKo: boolean; children: React.ReactNode }) {
   return (
-    <section className="resume-section mb-8">
-      <h2 className="editorial-label text-muted border-b border-border pb-2 mb-4">{title}</h2>
-      {children}
+    <section className="mt-[8pt]">
+      <h2
+        className={`border-b border-black pb-[1pt] text-[14.4pt] leading-tight [break-after:avoid] ${isKo ? "font-bold" : ""}`}
+        style={isKo ? undefined : { fontVariant: "small-caps" }}
+      >
+        {title}
+      </h2>
+      <div className="mt-[3pt] flex flex-col gap-[4pt] pl-[0.15in]">{children}</div>
     </section>
   );
 }
 
+function Bullets({ items }: { items?: string[] }) {
+  if (!items?.length) return null;
+  return (
+    <ul className="mt-[1pt] list-disc pl-[0.2in] text-[10pt] leading-[1.3]">
+      {items.map((b, i) => (
+        <li key={i} className="pl-[2pt]">
+          {b}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Entry({ e }: { e: ResumeEntry }) {
+  return (
+    <div className="resume-section">
+      <div className="flex items-baseline justify-between gap-4">
+        <span className="font-bold">{e.title}</span>
+        <span className="shrink-0">{e.period}</span>
+      </div>
+      <div className="flex items-baseline justify-between gap-4 text-[10pt] italic">
+        <span>{e.subtitle}</span>
+        {e.location && <span className="shrink-0">{e.location}</span>}
+      </div>
+      <Bullets items={e.bullets} />
+    </div>
+  );
+}
+
 export default function ResumeDoc({ ko, en }: { ko: ResumeData; en: ResumeData }) {
-  const { locale } = useLanguage();
+  const { locale, setLocale } = useLanguage();
   const isKo = locale !== "en";
   const r = isKo ? ko : en;
-
   const L = isKo
-    ? {
-        summary: "요약",
-        pmSkills: "핵심 역량 — 프로덕트",
-        techSkills: "핵심 역량 — 기술",
-        experience: "경험 / 프로젝트",
-        stack: "기술 스택",
-        education: "교육 / 활동",
-        problem: "문제",
-        action: "행동",
-        result: "결과",
-        viewCase: "케이스 스터디 보기",
-        print: "PDF로 저장",
-        emptyExp: "경험 항목이 비어 있습니다. 어드민 → 이력서 탭에서 채우세요.",
-      }
-    : {
-        summary: "Summary",
-        pmSkills: "Core Skills — Product",
-        techSkills: "Core Skills — Technical",
-        experience: "Experience / Projects",
-        stack: "Stack",
-        education: "Education",
-        problem: "Problem",
-        action: "Action",
-        result: "Result",
-        viewCase: "Read the case study",
-        print: "Save as PDF",
-        emptyExp: "No experience entries yet.",
-      };
+    ? { education: "교육", experience: "경력", projects: "프로젝트", skills: "기술", print: "PDF로 저장" }
+    : { education: "Education", experience: "Experience", projects: "Projects", skills: "Technical Skills", print: "Save as PDF" };
+
+  const links = [
+    { label: r.contact.email, href: `mailto:${r.contact.email}` },
+    r.contact.linkedin && { label: r.contact.linkedin, href: `https://${r.contact.linkedin}` },
+    r.contact.github && { label: r.contact.github, href: `https://${r.contact.github}` },
+    { label: r.contact.blog, href: `https://${r.contact.blog}` },
+  ].filter(Boolean) as { label: string; href: string }[];
 
   return (
-    <div className="max-w-3xl mx-auto px-6 md:px-12 py-16 animate-fadeIn">
-      {/* Print button — hidden in the PDF itself */}
-      <div className="no-print flex justify-end mb-8">
+    <div className="mx-auto max-w-[calc(8.27in+48px)] px-6 pb-20 pt-10 print:max-w-none print:p-0">
+      <div className="no-print mb-6 flex items-center justify-between gap-4">
+        <div className="flex rounded-full border border-border p-1 text-sm" role="group" aria-label="이력서 언어">
+          {(["ko", "en"] as const).map((l) => (
+            <button
+              key={l}
+              type="button"
+              onClick={() => setLocale(l)}
+              aria-pressed={locale === l}
+              className={`rounded-full px-3.5 py-1.5 font-medium transition-colors ${locale === l ? "bg-brand text-white" : "text-secondary hover:text-foreground"}`}
+            >
+              {l === "ko" ? "한국어" : "English"}
+            </button>
+          ))}
+        </div>
         <button
+          type="button"
           onClick={() => window.print()}
-          className="group inline-flex items-center gap-2 border border-border px-4 py-2.5 hover:border-foreground transition-colors cursor-pointer"
+          className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-medium text-white transition-[filter] hover:brightness-110"
         >
-          <Printer size={14} strokeWidth={1.5} className="text-muted group-hover:text-foreground transition-colors" />
-          <span className="editorial-label text-foreground font-bold">{L.print}</span>
+          <Printer size={16} aria-hidden />
+          {L.print}
         </button>
       </div>
 
-      <article className="resume-doc">
-        {/* ── Header ── */}
-        <header className="resume-section mb-10 pb-6 border-b-2 border-foreground">
-          <h1 className="font-heading text-3xl md:text-4xl font-extrabold tracking-tight mb-2">
+      {/* 화면에서는 A4 종이처럼 보이고, 인쇄하면 종이 테두리 없이 @page 여백(0.5in)만 남는다 */}
+      <article
+        lang={isKo ? "ko" : "en"}
+        className="resume-doc bg-white p-[0.5in] text-[11pt] leading-snug text-black shadow-[0_8px_32px_rgba(24,25,27,0.12)]"
+        style={{ fontFamily: isKo ? FONT.ko : FONT.en }}
+      >
+        {/* header 태그는 글 인쇄 규칙(globals.css)이 숨기므로 div로 둔다 */}
+        <div className="text-center">
+          <h1 className={`text-[24.9pt] font-bold leading-tight ${isKo ? "" : "tracking-wide"}`} style={isKo ? undefined : { fontVariant: "small-caps" }}>
             {r.name}
           </h1>
-          <p className="text-lg text-foreground font-light mb-5">{r.headline}</p>
-          <div className="flex flex-wrap gap-x-5 gap-y-1.5 font-mono text-xs text-muted">
-            <a href={`mailto:${r.contact.email}`} data-print-url className="hover:text-foreground transition-colors">
-              {r.contact.email}
-            </a>
-            <a href={`https://${r.contact.github}`} className="hover:text-foreground transition-colors">
-              {r.contact.github}
-            </a>
-            <a href={`https://${r.contact.blog}`} className="hover:text-foreground transition-colors">
-              {r.contact.blog}
-            </a>
-            {r.contact.linkedin && (
-              <a href={`https://${r.contact.linkedin}`} className="hover:text-foreground transition-colors">
-                {r.contact.linkedin}
-              </a>
-            )}
-          </div>
-        </header>
-
-        {/* ── Summary — every bullet carries a number ── */}
-        {r.summary.length > 0 && (
-          <Section title={L.summary}>
-            <ul className="space-y-2.5">
-              {r.summary.map((s, i) => (
-                <li key={i} className="flex gap-3">
-                  <span className="text-accent shrink-0 font-bold">—</span>
-                  <span className="text-secondary leading-relaxed font-light">{s}</span>
-                </li>
-              ))}
-            </ul>
-          </Section>
-        )}
-
-        {/* ── Core skills: PM first, tech second. The ordering is the positioning. ── */}
-        <div className="grid md:grid-cols-2 gap-x-10">
-          {r.pmSkills.length > 0 && (
-            <Section title={L.pmSkills}>
-              <ul className="space-y-2">
-                {r.pmSkills.map((s, i) => (
-                  <li key={i} className="text-sm text-secondary leading-relaxed font-light">
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          )}
-
-          {r.techSkills.length > 0 && (
-            <Section title={L.techSkills}>
-              <ul className="space-y-2">
-                {r.techSkills.map((s, i) => (
-                  <li key={i} className="text-sm text-secondary leading-relaxed font-light">
-                    {s}
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          )}
+          <p className="mt-[3pt] text-[10pt] leading-[1.4]">
+            {links.map((l, i) => (
+              <span key={l.href} className="whitespace-nowrap">
+                {i > 0 && <span className="mx-[5pt]">|</span>}
+                <a href={l.href} className="underline underline-offset-2">
+                  {l.label}
+                </a>
+              </span>
+            ))}
+          </p>
         </div>
 
-        {/* ── Experience — STAR blocks joined to /cases ── */}
-        <Section title={L.experience}>
-          {r.experience.length === 0 ? (
-            <p className="text-sm text-muted/60 italic no-print">{L.emptyExp}</p>
-          ) : (
-            <div className="space-y-8">
-              {r.experience.map((e, i) => (
-                <div key={i} className="resume-section">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
-                    <h3 className="font-heading text-lg font-bold tracking-tight">
-                      {e.role}
-                      {e.org && <span className="text-muted font-normal"> · {e.org}</span>}
-                    </h3>
-                    <span className="font-mono text-xs text-muted">{e.period}</span>
-                  </div>
-
-                  <dl className="space-y-2 text-sm">
-                    {[
-                      { k: L.problem, v: e.problem },
-                      { k: L.action, v: e.action },
-                      { k: L.result, v: e.result },
-                    ]
-                      .filter((x) => x.v)
-                      .map((x) => (
-                        <div key={x.k} className="flex gap-4">
-                          <dt className="editorial-label text-muted shrink-0 w-16 pt-0.5">{x.k}</dt>
-                          <dd className="text-secondary font-light flex-1 leading-relaxed">{x.v}</dd>
-                        </div>
-                      ))}
-                  </dl>
-
-                  {e.caseSlug && (
-                    <Link
-                      href={`/cases/${e.caseSlug}`}
-                      data-print-url
-                      className="group inline-flex items-center gap-1.5 mt-3 editorial-label text-foreground font-bold hover:opacity-70 transition-opacity"
-                    >
-                      <span>{L.viewCase}</span>
-                      <ArrowUpRight
-                        size={12}
-                        strokeWidth={2}
-                        className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
-                      />
-                    </Link>
-                  )}
-                </div>
-              ))}
+        <Section title={L.projects} isKo={isKo}>
+          {r.projects.map((p, i) => (
+            <div key={i} className="resume-section">
+              <div className="flex items-baseline justify-between gap-4 text-[10pt]">
+                <span>
+                  <span className="font-bold">{p.name}</span>
+                  <span className="mx-[5pt]">|</span>
+                  <span>{p.team}</span>
+                </span>
+                <span className="shrink-0">{p.period}</span>
+              </div>
+              <Bullets items={p.bullets} />
             </div>
-          )}
+          ))}
         </Section>
 
-        {/* ── Stack — one line per category, not a chip wall ── */}
-        {r.stack.length > 0 && (
-          <Section title={L.stack}>
-            <dl className="space-y-2.5">
-              {r.stack.map((s, i) => (
-                <div key={i} className="flex gap-4">
-                  <dt className="editorial-label text-muted shrink-0 w-24 pt-0.5">{s.category}</dt>
-                  <dd className="text-sm text-secondary font-light flex-1">{s.items}</dd>
-                </div>
-              ))}
-            </dl>
+        {r.experience.length > 0 && (
+          <Section title={L.experience} isKo={isKo}>
+            {r.experience.map((e, i) => (
+              <Entry key={i} e={e} />
+            ))}
           </Section>
         )}
 
-        {/* ── Education ── */}
-        {r.education.length > 0 && (
-          <Section title={L.education}>
-            <div className="space-y-4">
-              {r.education.map((e, i) => (
-                <div key={i} className="flex flex-wrap items-baseline justify-between gap-2">
-                  <div>
-                    <span className="text-foreground font-medium">{e.title}</span>
-                    <span className="text-muted"> · {e.org}</span>
-                    {e.note && (
-                      <div className="text-xs text-muted/70 mt-0.5 font-light">{e.note}</div>
-                    )}
-                  </div>
-                  <span className="font-mono text-xs text-muted">{e.period}</span>
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
+        <Section title={L.education} isKo={isKo}>
+          {r.education.map((e, i) => (
+            <Entry key={i} e={e} />
+          ))}
+        </Section>
+
+        <Section title={L.skills} isKo={isKo}>
+          <p className="text-[10pt] leading-[1.45]">
+            {r.skills.map((s) => (
+              <span key={s.category} className="block">
+                <span className="font-bold">{s.category}</span>: {s.items}
+              </span>
+            ))}
+          </p>
+        </Section>
       </article>
     </div>
   );
