@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { routeFor } from "@/lib/categories";
@@ -12,7 +11,9 @@ import CommentSection from "@/components/posts/CommentSection";
 import { TocCollapsible, TocSidebar } from "@/components/posts/TableOfContents";
 import PostTools from "@/components/posts/PostTools";
 import MarginFootnotes from "@/components/posts/MarginFootnotes";
+import CircleArrow from "@/components/common/CircleArrow";
 import Breadcrumb from "@/components/common/Breadcrumb";
+import RevealOnScroll from "@/components/home/RevealOnScroll";
 
 type Params = Promise<{ slug: string }>;
 
@@ -68,8 +69,12 @@ export default async function InsightDetailPage({ params }: { params: Params }) 
   const project = post.product?.published ? post.product : null;
   const topic = topicLabel(post.topic);
 
+  // 순서대로 늦게 나타나는 간격 (ms)
+  const delay = (ms: number) => ({ "--d": `${ms}ms` }) as React.CSSProperties;
+
   return (
     <article>
+      <RevealOnScroll />
       {isDraft && (
         <div className="bg-brand-soft px-6 py-3 text-center text-sm text-brand">
           비공개 초안입니다. 방문자에게는 보이지 않아요.
@@ -77,15 +82,17 @@ export default async function InsightDetailPage({ params }: { params: Params }) 
       )}
 
       <header className="mx-auto flex max-w-[1184px] flex-col gap-[18px] px-6 pb-16 pt-14">
-        <Breadcrumb
-          items={[{ label: "글", href: "/insights" }, ...(topic ? [{ label: topic, href: `/insights?topic=${post.topic}` }] : [])]}
-        />
-        <h1 className="text-[36px] font-bold leading-[50px] text-foreground md:text-[56px] md:leading-[78px]">{post.title}</h1>
+        <div className="motion-rise">
+          <Breadcrumb
+            items={[{ label: "포스트", href: "/insights" }, ...(topic ? [{ label: topic, href: `/insights?topic=${post.topic}` }] : [])]}
+          />
+        </div>
+        <h1 style={delay(100)} className="motion-rise text-[36px] font-bold leading-[50px] text-foreground md:text-[56px] md:leading-[78px]">{post.title}</h1>
         {post.description && (
-          <p className="text-[20px] leading-8 text-secondary md:text-[25px] md:leading-10">{post.description}</p>
+          <p style={delay(180)} className="motion-rise text-[20px] leading-8 text-secondary md:text-[25px] md:leading-10">{post.description}</p>
         )}
         {tags.length > 0 && (
-          <ul className="flex flex-wrap gap-2">
+          <ul style={delay(240)} className="motion-rise flex flex-wrap gap-2">
             {tags.slice(0, 5).map((tag) => (
               <li key={tag} className="rounded-full bg-brand px-3 py-[5px] text-sm font-medium leading-[22px] text-white">
                 {tag}
@@ -93,18 +100,19 @@ export default async function InsightDetailPage({ params }: { params: Params }) 
             ))}
           </ul>
         )}
-        <div className="mt-2 flex items-center justify-between border-t border-border pt-4">
+        <div style={delay(300)} className="motion-rise mt-2 flex items-center justify-between border-t border-border pt-4">
           <time dateTime={post.createdAt.toISOString()} className="text-sm text-secondary">
             {koreanDate(post.createdAt)}
           </time>
           <PostTools />
         </div>
-        <div className="xl:hidden">
+        <div style={delay(340)} className="motion-rise xl:hidden">
           <TocCollapsible content={post.content} />
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-[1184px] gap-8 px-6 pb-8">
+      {/* 본문과 양옆 목차·각주는 한 덩어리로 움직여 각주 위치 계산이 어긋나지 않게 한다 */}
+      <div style={delay(380)} className="motion-rise mx-auto flex max-w-[1184px] gap-8 px-6 pb-8">
         <aside className="hidden w-[176px] shrink-0 xl:block">
           <TocSidebar content={post.content} />
         </aside>
@@ -120,28 +128,27 @@ export default async function InsightDetailPage({ params }: { params: Params }) 
         {project && (
           <Link
             href={`/products/${project.slug}`}
-            className="flex items-center justify-between gap-6 rounded-2xl bg-surface p-6 transition-colors hover:bg-brand-soft"
+            data-reveal
+            className="lift-card group flex items-center justify-between gap-6 rounded-2xl bg-surface p-6 hover:bg-brand-soft"
           >
             <span>
               <span className="block text-sm text-brand">관련 프로젝트</span>
               <span className="mt-1 block text-[26px] font-bold leading-[38px] text-foreground">{project.name}</span>
               {project.tagline && <span className="block text-base text-secondary">{project.tagline}</span>}
             </span>
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-background text-brand">
-              <ArrowRight size={20} />
-            </span>
+            <CircleArrow />
           </Link>
         )}
 
         {related.length > 0 && (
           <section>
-            <h2 className="text-[26px] font-bold leading-[38px] text-foreground">함께 읽을 글</h2>
+            <h2 data-reveal className="text-[26px] font-bold leading-[38px] text-foreground">함께 읽을 포스트</h2>
             <ul className="mt-4">
-              {related.map((r) => (
-                <li key={r.slug} className="border-t border-border">
-                  <Link href={routeFor(r.category, r.slug)} className="flex items-center justify-between gap-4 py-4 text-lg font-bold text-foreground hover:text-brand">
+              {related.map((r, i) => (
+                <li key={r.slug} data-reveal style={delay(80 + i * 80)} className="border-t border-border">
+                  <Link href={routeFor(r.category, r.slug)} className="group flex items-center justify-between gap-4 py-4 text-lg font-bold text-foreground transition-colors duration-300 hover:text-brand">
                     {r.title}
-                    <ArrowRight size={16} className="shrink-0 text-brand" />
+                    <CircleArrow />
                   </Link>
                 </li>
               ))}
@@ -149,7 +156,9 @@ export default async function InsightDetailPage({ params }: { params: Params }) 
           </section>
         )}
 
-        <CommentSection postId={post.id} />
+        <div data-reveal>
+          <CommentSection postId={post.id} />
+        </div>
       </div>
     </article>
   );

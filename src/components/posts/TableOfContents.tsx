@@ -63,14 +63,14 @@ function jump(e: React.MouseEvent, id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 }
 
-// IA_PS_002 왼쪽 "이 글의 목차" (xl 이상)
+// IA_PS_002 왼쪽 "이 포스트의 목차" (xl 이상)
 export function TocSidebar({ content }: { content: string }) {
   const items = useMemo(() => parseToc(content), [content]);
   const activeId = useActiveHeading(items);
   if (items.length < 2) return null;
   return (
-    <nav aria-label="이 글의 목차" className="sticky top-32 flex flex-col gap-5">
-      <p className="text-sm font-bold leading-[22px] text-foreground">이 글의 목차</p>
+    <nav aria-label="이 포스트의 목차" className="sticky top-24 flex flex-col gap-5">
+      <p className="text-sm font-bold leading-[22px] text-foreground">이 포스트의 목차</p>
       {items.map((item) => (
         <a
           key={item.id}
@@ -101,7 +101,7 @@ export function TocCollapsible({ content }: { content: string }) {
         className="flex h-14 w-full items-center gap-3 px-5 text-left"
       >
         <ChevronDown size={16} className={`text-brand transition-transform ${open ? "rotate-180" : ""}`} />
-        <span className="text-base font-medium text-foreground">이 글의 목차</span>
+        <span className="text-base font-medium text-foreground">이 포스트의 목차</span>
         <span className="text-[13px] text-secondary">{items.length}개 항목</span>
       </button>
       {open && (

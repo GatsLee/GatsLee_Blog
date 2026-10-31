@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 
 // 글 목록의 검색 입력과 정렬. 값은 주소(searchParams)에 둔다
 export default function ListControls({ placeholder, count }: { placeholder: string; count: number }) {
@@ -37,16 +37,20 @@ export default function ListControls({ placeholder, count }: { placeholder: stri
         />
       </form>
       <div className="mt-6 flex items-center justify-between">
-        <p className="text-sm font-medium text-foreground">글 {count}개</p>
-        <select
-          aria-label="정렬"
-          defaultValue={params.get("sort") ?? "latest"}
-          onChange={(e) => push({ sort: e.target.value === "latest" ? "" : e.target.value })}
-          className="h-10 rounded-md border border-border bg-background px-3 text-sm text-secondary"
-        >
-          <option value="latest">최신순</option>
-          <option value="oldest">오래된순</option>
-        </select>
+        <p className="text-sm font-medium text-foreground">포스트 {count}개</p>
+        {/* 브라우저 기본 화살표 대신 테두리에서 16px 띄운 화살표를 그린다 */}
+        <div className="relative">
+          <select
+            aria-label="정렬"
+            defaultValue={params.get("sort") ?? "latest"}
+            onChange={(e) => push({ sort: e.target.value === "latest" ? "" : e.target.value })}
+            className="h-10 appearance-none rounded-md border border-border bg-background pl-3 pr-10 text-sm text-secondary"
+          >
+            <option value="latest">최신순</option>
+            <option value="oldest">오래된순</option>
+          </select>
+          <ChevronDown size={16} aria-hidden className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-secondary" />
+        </div>
       </div>
     </>
   );
