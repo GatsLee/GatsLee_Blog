@@ -557,8 +557,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 .lift-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(49, 92, 244, 0.14); }
 .reveal-ready .lift-card[data-reveal]:not(.is-revealed) { opacity: 0; transform: translateY(20px); }
+/* 일상(IA_DL_001) 주제 버블: 위아래로 둥실 떠 있다. 주기·시작은 --float-dur, --float-delay로 어긋나게 준다 */
+@keyframes bubble-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+.bubble-float { animation: bubble-float var(--float-dur, 3.5s) ease-in-out var(--float-delay, 0s) infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .motion-rise, .hero-float { animation: none; }
+  .motion-rise, .hero-float, .bubble-float { animation: none; }
   [data-reveal], .streak-col, .lift-card { transition: none; }
   .lift-card:hover { transform: none; }
 }
