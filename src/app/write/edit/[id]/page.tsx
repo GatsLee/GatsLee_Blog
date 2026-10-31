@@ -4,7 +4,7 @@ import PostEditor from "@/components/editor/PostEditorClient";
 import type { EditorPost } from "@/components/editor/PostEditor";
 import { ToastProvider } from "@/components/admin/ui/Toast";
 
-export const metadata = { title: "글 수정" };
+export const metadata = { title: "포스트 수정" };
 
 type Params = Promise<{ id: string }>;
 

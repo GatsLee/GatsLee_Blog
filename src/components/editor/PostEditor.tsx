@@ -183,7 +183,7 @@ export default function PostEditor({ post }: { post: EditorPost | null }) {
   const isUpdate = Boolean(id) && (Boolean(post) || status === "published");
   const primary = async () => {
     const saved = await save(isUpdate ? status : "published");
-    if (saved) toast({ ok: true, message: isUpdate ? "업데이트했어요." : "글을 발행했어요." });
+    if (saved) toast({ ok: true, message: isUpdate ? "업데이트했어요." : "포스트를 발행했어요." });
   };
 
   const preview = async () => {
@@ -272,15 +272,15 @@ export default function PostEditor({ post }: { post: EditorPost | null }) {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-border bg-background px-6">
         <div className="flex min-w-0 items-center gap-3">
-          <Link href="/admin/posts" aria-label="글 목록으로" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-foreground hover:bg-surface">
+          <Link href="/admin/posts" aria-label="포스트 목록으로" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-foreground hover:bg-surface">
             <ChevronLeft size={16} />
           </Link>
           <span className="flex min-w-0 items-center gap-1.5 text-[13px]">
             <Link href="/admin/posts" className="text-secondary hover:text-foreground">
-              글
+              포스트
             </Link>
             <span className="text-muted">/</span>
-            <span className="truncate font-bold text-foreground">{title || (isEdit ? "제목 없음" : "새 글")}</span>
+            <span className="truncate font-bold text-foreground">{title || (isEdit ? "제목 없음" : "새 포스트")}</span>
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -288,7 +288,7 @@ export default function PostEditor({ post }: { post: EditorPost | null }) {
             {saveState}
           </span>
           {id && (
-            <button type="button" aria-label="글 삭제" onClick={() => setConfirmDelete(true)} className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-border text-foreground hover:border-danger hover:text-danger">
+            <button type="button" aria-label="포스트 삭제" onClick={() => setConfirmDelete(true)} className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-border text-foreground hover:border-danger hover:text-danger">
               <Trash2 size={16} />
             </button>
           )}
@@ -302,8 +302,8 @@ export default function PostEditor({ post }: { post: EditorPost | null }) {
       </header>
 
       <div className="mx-auto flex max-w-[1280px] gap-10 px-6">
-        <nav aria-label="이 글의 목차" className="sticky top-16 hidden w-[200px] shrink-0 self-start pt-[280px] xl:block">
-          <p className="text-sm font-bold text-foreground">이 글의 목차</p>
+        <nav aria-label="이 포스트의 목차" className="sticky top-16 hidden w-[200px] shrink-0 self-start pt-[280px] xl:block">
+          <p className="text-sm font-bold text-foreground">이 포스트의 목차</p>
           {headings.length === 0 ? (
             <p className="mt-2 text-xs text-muted">제목 블록을 넣으면 여기에 보여요</p>
           ) : (
@@ -527,7 +527,7 @@ export default function PostEditor({ post }: { post: EditorPost | null }) {
         </main>
 
         <aside className="sticky top-16 hidden w-[200px] shrink-0 self-start pt-[280px] xl:block">
-          <p className="text-sm font-bold text-foreground">글 정보</p>
+          <p className="text-sm font-bold text-foreground">포스트 정보</p>
           <p className="mt-2 text-[13px] text-secondary">
             {chars.toLocaleString()}자 · 약 {Math.max(1, Math.ceil(chars / 500))}분
           </p>
@@ -537,8 +537,8 @@ export default function PostEditor({ post }: { post: EditorPost | null }) {
 
       <ConfirmDialog
         open={confirmDelete}
-        title="글을 삭제할까요?"
-        description="삭제한 글과 댓글은 되돌릴 수 없어요. 잠시 내리려면 상태를 숨김으로 바꾸세요."
+        title="포스트를 삭제할까요?"
+        description="삭제한 포스트와 댓글은 되돌릴 수 없어요. 잠시 내리려면 상태를 숨김으로 바꾸세요."
         onConfirm={remove}
         onCancel={() => setConfirmDelete(false)}
       />

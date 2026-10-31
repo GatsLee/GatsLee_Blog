@@ -31,7 +31,7 @@ export default function RowMenu({ id, title, status, previewHref }: { id: number
       body: JSON.stringify({ status: next }),
     }).catch(() => null);
     if (res?.ok) {
-      toast({ ok: true, message: next === "hidden" ? "글을 숨겼어요." : "글을 다시 발행했어요." });
+      toast({ ok: true, message: next === "hidden" ? "포스트를 숨겼어요." : "포스트를 다시 발행했어요." });
       router.refresh();
     } else {
       toast({ ok: false, message: "상태를 바꾸지 못했어요.", retry: () => setStatus(next) });
@@ -44,7 +44,7 @@ export default function RowMenu({ id, title, status, previewHref }: { id: number
     setBusy(false);
     setConfirming(false);
     if (res?.ok) {
-      toast({ ok: true, message: "글을 삭제했어요." });
+      toast({ ok: true, message: "포스트를 삭제했어요." });
       router.refresh();
     } else {
       toast({ ok: false, message: "삭제하지 못했어요.", retry: remove });
@@ -100,12 +100,12 @@ export default function RowMenu({ id, title, status, previewHref }: { id: number
       <ConfirmDialog
         open={confirming}
         busy={busy}
-        title="글을 삭제할까요?"
+        title="포스트를 삭제할까요?"
         description={
           <>
             <b className="text-foreground">{title}</b>
             <br />
-            삭제한 글과 댓글은 되돌릴 수 없어요. 잠시 내리려면 숨기기를 쓰세요.
+            삭제한 포스트와 댓글은 되돌릴 수 없어요. 잠시 내리려면 숨기기를 쓰세요.
           </>
         }
         onConfirm={remove}

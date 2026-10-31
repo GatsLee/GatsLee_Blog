@@ -12,7 +12,7 @@ const GROUPS = [
     label: "콘텐츠 관리",
     items: [
       { href: "/admin", label: "대시보드", icon: LayoutGrid, exact: true },
-      { href: "/admin/posts", label: "글", icon: FileText },
+      { href: "/admin/posts", label: "포스트", icon: FileText },
       { href: "/admin/projects", label: "프로젝트", icon: FolderClosed },
     ],
   },
@@ -89,7 +89,7 @@ export default function AdminSidebar({ streak, resume }: { streak: StreakData | 
             </div>
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-medium text-foreground">
-                글 {streak.posts} · 프로젝트 {streak.projects}
+                포스트 {streak.posts} · 프로젝트 {streak.projects}
               </span>
               <StreakLegend size={8} />
             </div>

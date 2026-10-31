@@ -11,7 +11,7 @@ import FilterSelect from "@/components/admin/posts/FilterSelect";
 import RowMenu from "@/components/admin/posts/RowMenu";
 import AdminPager from "@/components/admin/ui/AdminPager";
 
-export const metadata = { title: "글 관리" };
+export const metadata = { title: "포스트 관리" };
 
 const PER_PAGE = 10;
 
@@ -79,11 +79,11 @@ export default async function AdminPostsPage({ searchParams }: { searchParams: S
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold leading-8 text-foreground">글</h1>
-          <p className="mt-1 text-[13px] text-secondary">발행한 글과 초안을 관리합니다.</p>
+          <h1 className="text-2xl font-bold leading-8 text-foreground">포스트</h1>
+          <p className="mt-1 text-[13px] text-secondary">발행한 포스트와 초안을 관리합니다.</p>
         </div>
         <Link href="/write" className="flex h-11 items-center rounded-[10px] bg-brand px-4 text-sm font-bold text-white hover:opacity-90">
-          새 글 쓰기
+          새 포스트 쓰기
         </Link>
       </div>
 
@@ -111,7 +111,7 @@ export default async function AdminPostsPage({ searchParams }: { searchParams: S
             {status && <input type="hidden" name="status" value={status} />}
             {topic && <input type="hidden" name="topic" value={topic} />}
             {sort.value !== "updated" && <input type="hidden" name="sort" value={sort.value} />}
-            <input name="q" defaultValue={q} placeholder="검색" aria-label="글 검색" className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted" />
+            <input name="q" defaultValue={q} placeholder="검색" aria-label="포스트 검색" className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted" />
             <button type="submit" aria-label="검색">
               <Search size={16} className="text-secondary" />
             </button>
@@ -149,7 +149,7 @@ export default async function AdminPostsPage({ searchParams }: { searchParams: S
             {posts.length === 0 ? (
               <tr>
                 <td colSpan={6} className="border-t border-border px-4 py-16 text-center text-sm text-secondary">
-                  {q || topic || status ? "조건에 맞는 글이 없어요." : "아직 쓴 글이 없어요."}
+                  {q || topic || status ? "조건에 맞는 포스트가 없어요." : "아직 쓴 포스트가 없어요."}
                 </td>
               </tr>
             ) : (

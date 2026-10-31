@@ -22,7 +22,7 @@ export default function AdminToolbar() {
         className="flex h-10 w-[300px] items-center gap-2 rounded-[10px] bg-surface px-3"
       >
         <Search size={18} className="text-secondary" />
-        <input name="q" placeholder="글 검색" className="flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-secondary" />
+        <input name="q" placeholder="포스트 검색" className="flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-secondary" />
       </form>
       <button
         type="button"
